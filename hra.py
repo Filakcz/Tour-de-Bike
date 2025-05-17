@@ -1,4 +1,4 @@
-import pygame 
+import pygame
 import math
 
 pygame.init()
@@ -11,116 +11,195 @@ pygame.display.set_caption("Tour de Bike")
 barva_nebe = (135, 206, 235)
 barva_trava = (0,154,23)
 
-bezi = True
-clock = pygame.time.Clock()
-
 krok = 10
 
 def generace_bod(x):
     i = x / 10
     obtiznost = 1 + (x / 25000)
-
     y = (obrazovka_vyska * 0.7
-         + math.sin(i * 0.004 * obtiznost) * (120 * obtiznost)   
-         + math.sin(i * 0.025 * obtiznost + math.cos(i * 0.002)) * (60 * obtiznost)  
-         + math.sin(i * 0.13 + math.cos(i * 0.03)) * (18 + obtiznost * 5)            
-         + math.sin(i * 0.0025)                   
-         + math.cos(i * 0.7) * 2                                                     
+         + math.sin(i * 0.004 * obtiznost) * (120 * obtiznost)
+         + math.sin(i * 0.025 * obtiznost + math.cos(i * 0.002)) * (60 * obtiznost)
+         + math.sin(i * 0.13 + math.cos(i * 0.03)) * (18 + obtiznost * 5)
+         + math.sin(i * 0.0025)
+         + math.cos(i * 0.7) * 2
     )
     return y
 
-kolo_x = 0
-kolo_y = generace_bod(kolo_x)
-kolo_rychlost_x = 0
-kolo_rychlost_y = 0
-kolo_akcelerace = 0.7
-kolo_top_rychlost = 18
-gravitace = 1.2
-odpor_vzduchu = 0.02  
-kolo_skok = 25
+def nahrat_obrazky():
+    obrazky = []
+    for i in range(14):
+        if i < 10:
+            img = pygame.image.load(f"img/kolo000{i}.png").convert_alpha()
+        else:
+            img = pygame.image.load(f"img/kolo00{i}.png").convert_alpha()
+        img_sirka = img.get_width()
+        img_vyska = img.get_height()
+        img = pygame.transform.scale(img, (img_sirka//4, img_vyska//4))
+        obrazky.append(img)
+    return obrazky
 
-kolo_obrazky = []
-for i in range(14):
-    if i < 10:
-        img = pygame.image.load(f"img/kolo000{i}.png").convert_alpha()
-    else:
-        img = pygame.image.load(f"img/kolo00{i}.png").convert_alpha()
-    img_sirka = img.get_width()
-    img_vyska = img.get_height()
-    img = pygame.transform.scale(img, (img_sirka/4, img_vyska/4))  
-    kolo_obrazky.append(img)
+def blitRotate(surf, image, origin, pivot, angle):
+    # https://stackoverflow.com/questions/15098900/how-to-set-the-pivot-point-center-of-rotation-for-pygame-transform-rotate
+    image_rect = image.get_rect(topleft=(origin[0] - pivot[0], origin[1] - pivot[1]))
+    offset_center_to_pivot = pygame.math.Vector2(origin) - image_rect.center
+    rotated_offset = offset_center_to_pivot.rotate(-angle)
+    rotated_image_center = (origin[0] - rotated_offset.x, origin[1] - rotated_offset.y)
+    rotated_image = pygame.transform.rotate(image, angle)
+    rotated_image_rect = rotated_image.get_rect(center=rotated_image_center)
+    surf.blit(rotated_image, rotated_image_rect)
 
-while bezi:
-    screen.fill(barva_nebe)
+class CyklistickeKolo(pygame.sprite.Sprite):
+    def __init__(self, x, y, obrazky_ramu, obrazek_rafku):
+        super().__init__()
+        self.x = x
+        self.y = y
+        self.rychlost_x = 0
+        self.rychlost_y = 0
+        self.akcelerace = 0.7
+        self.top_rychlost = 18
+        self.gravitace = 1.2
+        self.odpor_vzduchu = 0.02
+        self.skok = 30
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            bezi = False
+        self.kolo_polomer = 48
+        self.kolo_vzdalenost = 140
+        self.x_zadni_kolo = self.x - self.kolo_vzdalenost // 2 
+        self.x_predni_kolo = self.x + self.kolo_vzdalenost // 2 
+        self.y_zadni_kolo = generace_bod(self.x_zadni_kolo)
+        self.y_predni_kolo = generace_bod(self.x_predni_kolo)
+        # y je bod doteku kola terenu
+        self.rafek_img = pygame.image.load(obrazek_rafku).convert_alpha()
+        self.rafek_img = pygame.transform.scale(self.rafek_img, (self.kolo_polomer*2, self.kolo_polomer*2))
+        self.rafek_uhel = 0
 
-    keys = pygame.key.get_pressed()
+        self.ram_obrazky = obrazky_ramu
+        self.animace_pocet = len(self.ram_obrazky)
+        self.animace_index = 0
 
-    if keys[pygame.K_a]:
-        kolo_rychlost_x -= kolo_akcelerace
-    if keys[pygame.K_d]:
-        kolo_rychlost_x += kolo_akcelerace
+    def pohyb(self, keys):
+        if keys[pygame.K_a]:
+            self.rychlost_x -= self.akcelerace
+            self.animace_index -= 0.5
+            if self.animace_index < 0:
+                self.animace_index = self.animace_pocet - 1
+        if keys[pygame.K_d]:
+            self.rychlost_x += self.akcelerace
+            self.animace_index += 0.5
+            if self.animace_index >= self.animace_pocet:
+                self.animace_index = 0
+        if keys[pygame.K_w]:
+            if self.je_na_zemi():
+                self.rychlost_y = -self.skok
+        if keys[pygame.K_s]:
+            print("Zadni kolo x:", self.x_zadni_kolo)
+            print("Predni kolo x:", self.x_predni_kolo)
+            print("Zadni kolo y (spodek):", self.y_zadni_kolo)
+            print("Predni kolo y (spodek):", self.y_predni_kolo)
+            print("zadni kolo generace:", generace_bod(self.x_zadni_kolo))
+            print("Predni kolo generace:", generace_bod(self.x_predni_kolo))
+            print("Y:", self.y)
+            print("x:", self.x)
 
-    if keys[pygame.K_w]:
-        kolo_y -= kolo_skok
+    def aktualizace(self):
+        self.rychlost_y += self.gravitace
 
-    kolo_rychlost_x = kolo_rychlost_x * (1 - odpor_vzduchu)
+        if not self.je_na_zemi(30):
+            self.y_zadni_kolo += self.rychlost_y
+            self.y_predni_kolo = self.y_zadni_kolo
+        else:
+            self.y_zadni_kolo += self.rychlost_y
+            self.y_predni_kolo += self.rychlost_y
+
+        self.rychlost_x *= (1 - self.odpor_vzduchu)
+        self.rychlost_x = max(-self.top_rychlost, min(self.rychlost_x, self.top_rychlost))
+        self.x += self.rychlost_x
+        self.x_zadni_kolo = self.x - self.kolo_vzdalenost // 2                                  
+        self.x_predni_kolo = self.x + self.kolo_vzdalenost // 2
+
+        teren_zadni = generace_bod(self.x_zadni_kolo)
+        if self.y_zadni_kolo > teren_zadni:
+            self.y_zadni_kolo = teren_zadni
+        teren_predni = generace_bod(self.x_predni_kolo)
+        if self.y_predni_kolo > teren_predni:
+            self.y_predni_kolo = teren_predni
+        if self.y_predni_kolo == teren_predni and self.y_zadni_kolo == teren_zadni:
+            self.rychlost_y = 0
+
+        self.y = (self.y_zadni_kolo + self.y_predni_kolo - (2*self.kolo_polomer)) / 2
+
+        if self.je_na_zemi():
+            self.rychlost_x += math.sin(self.naklon()) * self.gravitace
+
+    def je_na_zemi(self, tolerance=0):
+        if self.y_zadni_kolo >= (generace_bod(self.x_zadni_kolo)-tolerance) or self.y_predni_kolo >= (generace_bod(self.x_predni_kolo)-tolerance):
+            return True
+        else:
+            return False
+
+    def naklon(self):
+        stred_zadni = self.y_zadni_kolo - self.kolo_polomer
+        stred_predni = self.y_predni_kolo - self.kolo_polomer
+        return math.atan2(stred_predni - stred_zadni, self.kolo_vzdalenost)
+    
+    def vykresli(self, kamera_x, kamera_y, screen):
+        obvod = self.kolo_polomer * 2 * math.pi
+        self.rafek_uhel -= (self.rychlost_x / obvod) * 360
+        self.rafek_uhel %= 360
+
+        rotace_rafek_img = pygame.transform.rotate(self.rafek_img, self.rafek_uhel)
+        rafek_rect = rotace_rafek_img.get_rect(center=(self.x_zadni_kolo - kamera_x, self.y_zadni_kolo - self.kolo_polomer - kamera_y))
+        screen.blit(rotace_rafek_img, rafek_rect)
+        rafek_rect = rotace_rafek_img.get_rect(center=(self.x_predni_kolo - kamera_x, self.y_predni_kolo - self.kolo_polomer - kamera_y))
+        screen.blit(rotace_rafek_img, rafek_rect)
 
 
-    kolo_rychlost_x = max(-kolo_top_rychlost, min(kolo_rychlost_x, kolo_top_rychlost))
+        ram = self.ram_obrazky[int(self.animace_index)]
+        uhel_ramu = -math.degrees(self.naklon())
+
+        blitRotate(screen, ram, (self.x_zadni_kolo - kamera_x, self.y_zadni_kolo - self.kolo_polomer - kamera_y), (0,ram.get_height()), uhel_ramu)
 
 
-    kolo_x += kolo_rychlost_x
-
-    kolo_rychlost_y += gravitace
-    kolo_y += kolo_rychlost_y
-
-    teren_y = generace_bod(kolo_x)
-
-    if kolo_y > teren_y:
-        kolo_y = teren_y
-        kolo_rychlost_y = 0
-
-    kamera_x = kolo_x - obrazovka_sirka // 2
-    kamera_y = kolo_y - obrazovka_vyska // 1.5
-
-    dx = img_sirka / 4
-    y1 = generace_bod(kolo_x - dx)
-    y2 = generace_bod(kolo_x + dx)
-
-    uhel = math.atan2(y2 - y1, 2 * dx)
-
-
-    if kolo_y == teren_y:
-        kolo_rychlost_x += math.sin(uhel) * gravitace
-
+def vykresli_teren(screen, kamera_x, kamera_y):
     body = [[0, obrazovka_vyska]]
     x_obrazovka = 0
     x_svet = kamera_x - (kamera_x % krok)
-
     while x_obrazovka < obrazovka_sirka + krok:
         y = generace_bod(x_svet) - kamera_y
         body.append([x_obrazovka, y])
         x_svet += krok
         x_obrazovka = x_svet - kamera_x
-
     body.append([obrazovka_sirka, obrazovka_vyska])
-
     pygame.draw.polygon(screen, barva_trava, body)
 
-    kolo_obrazovka_x = obrazovka_sirka // 2
-    kolo_obrazovka_y = kolo_y - kamera_y
 
-    animace_index = int((kolo_x / 30) % 14) 
+def main():
+    bezi = True
+    clock = pygame.time.Clock()
+    ram_obrazky = nahrat_obrazky()
+    obrazek_rafku = "img/rafek.png"  
 
-    kolo_img = pygame.transform.rotate(kolo_obrazky[animace_index], -math.degrees(uhel))
-    rect = kolo_img.get_rect(center=(kolo_obrazovka_x, kolo_obrazovka_y - 80))
-    screen.blit(kolo_img, rect.topleft)
+    kolo = CyklistickeKolo(0, generace_bod(0), ram_obrazky, obrazek_rafku)
 
-    pygame.display.update()
-    clock.tick(60)
+    while bezi:
+        screen.fill(barva_nebe)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                bezi = False
 
-pygame.quit()
+        keys = pygame.key.get_pressed()
+        kolo.pohyb(keys)
+        kolo.aktualizace()
+
+        kamera_x = kolo.x - obrazovka_sirka // 2
+        kamera_y = kolo.y - obrazovka_vyska // 1.5
+
+        vykresli_teren(screen, kamera_x, kamera_y)
+        kolo.vykresli(kamera_x, kamera_y, screen)
+
+        pygame.display.flip()
+        clock.tick(60)
+
+    pygame.quit()
+
+
+main()
