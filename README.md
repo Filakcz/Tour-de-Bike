@@ -1,5 +1,5 @@
 # Tour-de-Bike
-Made by Filakcz using Pygame<br />
+Pygame<br />
 <br>
 
 ![Thumbnail](img/thumbnail.png)

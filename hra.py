@@ -57,7 +57,7 @@ class CyklistickeKolo(pygame.sprite.Sprite):
         self.rychlost_x = 0
         self.rychlost_y = 0
         self.akcelerace = 0.7
-        self.top_rychlost = 18
+        self.top_rychlost = 70
         self.gravitace = 1.2
         self.odpor_vzduchu = 0.02
         self.skok = 25
@@ -176,14 +176,34 @@ class Banan(pygame.sprite.Sprite):
         screen.blit(self.image, (self.svet_x - kamera_x, self.svet_y - kamera_y))
     
 
-def vykresli_ui(screen, km, energie):
+def vykresli_ui(screen, km, energie, kolo_x, rychlost):
     text_km = font.render(f"Ujeto: {round(km/1000,1)} km", True, (0, 0, 0))
     screen.blit(text_km, (22, 20))
 
     pygame.draw.rect(screen, (50, 50, 50), (20, 90, 250, 40))
-    if energie > 0:  
-        pygame.draw.rect(screen, (255, 215, 0), (20, 90, 2.5 * energie, 40))  
-    pygame.draw.rect(screen, (0, 0, 0), (20, 90, 250, 40), 2)  
+    if energie > 0:
+        pygame.draw.rect(screen, (255, 215, 0), (20, 90, 2.5 * energie, 40))
+    pygame.draw.rect(screen, (0, 0, 0), (20, 90, 250, 40), 2)
+
+    screen.blit(tachometr_img, (50, 650))
+
+    stred_x = 250
+    stred_y = 845
+    delka_rucicky = 170
+    uhel = -220 + (abs(rychlost) / 70) * 262
+    uhel_rad = math.radians(uhel)
+    konec_x = stred_x + delka_rucicky * math.cos(uhel_rad)
+    konec_y = stred_y + delka_rucicky * math.sin(uhel_rad)
+    pygame.draw.line(screen, (255, 0, 0), (stred_x, stred_y), (konec_x, konec_y), 6)
+
+
+    if banany:
+        nejblizsi_banan = min(banany, key=lambda b: b.svet_x - kolo_x if b.svet_x > kolo_x else float('inf'))
+        vzdalenost = nejblizsi_banan.svet_x - kolo_x
+        if vzdalenost > 0:
+            text_sipka = font.render(f"{round(vzdalenost/1000,1)} km →", True, (0,0,0))
+            text_rect = text_sipka.get_rect()
+            screen.blit(text_sipka, (obrazovka_sirka - text_rect.width - 20, 20))
 
 
 def vykresli_teren(screen, kamera_x, kamera_y):
@@ -203,6 +223,9 @@ font = pygame.font.SysFont("Arial", 50)
 banany = pygame.sprite.Group()
 banan_img = pygame.image.load("img/banan.png").convert_alpha()
 banan_img = pygame.transform.scale(banan_img, (100, 100))
+
+tachometr_img = pygame.image.load("img/tachometr.png").convert_alpha()
+tachometr_img = pygame.transform.scale(tachometr_img, (400, 400))
 
 energie = 100
 obtiznost_mapy = 25000 # vyssi = tezsi
@@ -265,7 +288,8 @@ def main():
             # hrac muze na setrvacnost ziskat energii :) - par sekund
             bezi = False
 
-        vykresli_ui(screen, km_ujet, energie)
+        vykresli_ui(screen, km_ujet, energie, kolo.x, kolo.rychlost_x)
+
 
         pygame.display.flip()
         clock.tick(60)
