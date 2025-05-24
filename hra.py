@@ -148,12 +148,12 @@ def vykresli_kolo(kolo, camera, rafek_img, kolo_img):
 
 font = pygame.font.SysFont("Arial", 50)
 banan_img = pygame.image.load("img/banan.png").convert_alpha()
-k = 80 / banan_img.get_width()
-banan_img = pygame.transform.scale(banan_img, (int(banan_img.get_width() * k), int(banan_img.get_height() * k)))
+k = 70 / banan_img.get_width()
+banan_img = pygame.transform.smoothscale(banan_img, (int(banan_img.get_width() * k), int(banan_img.get_height() * k)))
 banan_energie = 30
 tycinka_img = pygame.image.load("img/tycinka.png").convert_alpha()
 k = 120 / tycinka_img.get_width()
-tycinka_img = pygame.transform.scale(tycinka_img, (int(tycinka_img.get_width() * k), int(tycinka_img.get_height() * k)))
+tycinka_img = pygame.transform.smoothscale(tycinka_img, (int(tycinka_img.get_width() * k), int(tycinka_img.get_height() * k)))
 tycinka_energie = 50
 
 energie_predmety = pygame.sprite.Group()
@@ -165,6 +165,11 @@ obtiznost_mapy = 2500 # nizsi cislo = tezsi
 ztrata_energie = 0.05
 pridavek_energie = 30
 rust_vzdalenosti = 500
+
+# TODO: main menu, nastaveni, ulozeni a nacteni hry, vylepseni kola, ruzne mapy
+# TODO: hudba, zvuk
+# TODO: credity - ondra = fyzika, antialiasing
+
 
 def main():
     start_cas = pygame.time.get_ticks()

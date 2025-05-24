@@ -6,10 +6,10 @@ import pygame
 
 BIKE_LENGTH = 120
 WHEEL_RADIUS = 40
-SUS_rear = 0.15
+SUS_REAR = 0.15
 SUS_FRONT = 0.15
 DAMP_FRONT = 0.99
-DAMP_rear = 0.99
+DAMP_REAR = 0.99
 SLAPANI_FROCE = 1
 INAIR_FORCE = 0.2
 WHEEL_COLLISION_CHECK_SUBDIVISIONS = 50
@@ -170,10 +170,10 @@ class Bike:
   
     # suspension
     # rear wheel
-    sus_force = (self.rear_axel.position - self.rear_wheel.position) * SUS_rear
+    sus_force = (self.rear_axel.position - self.rear_wheel.position) * SUS_REAR
     self.rear_wheel.apply_force(sus_force)
     self.rear_axel.apply_force(sus_force * -1)
-    self.rear_wheel.damp_relative_speed(self.rear_axel, DAMP_rear)
+    self.rear_wheel.damp_relative_speed(self.rear_axel, DAMP_REAR)
 
     # front wheel
     sus_force = (self.front_axel.position - self.front_wheel.position) * SUS_FRONT
