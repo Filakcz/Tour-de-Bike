@@ -63,12 +63,16 @@ class EnergetickyPredmet(pygame.sprite.Sprite):
         self.svet_y = y
         self.pridavek_energie = pridavek_energie
         self.image = obrazek
+        self.mask = pygame.mask.from_surface(self.image)
 
     def vykresli(self, screen, kamera_x, kamera_y):
         screen.blit(self.image, (self.svet_x - kamera_x, self.svet_y - kamera_y))
 
-    def hitbox(self):
-        return pygame.Rect(self.svet_x, self.svet_y, self.image.get_width(), self.image.get_height())
+    def get_mask(self):
+        return self.mask
+    
+    def get_position(self):
+        return int(self.svet_x), int(self.svet_y)
 
 def vykresli_ui(screen, km, energie, kolo_x, rychlost, cas):
     vykresli_text(screen, f"Ujeto: {round(km/1000,1)} km", (0, 0, 0), (22, 20))
@@ -206,11 +210,14 @@ def main():
 
         for predmet in energie_predmety.copy():
             predmet.vykresli(screen, camera.x, camera.y)
-            zadni = kolo.rear_wheel.get_position()
-            predni = kolo.front_wheel.get_position()
-            if predmet.hitbox().collidepoint(zadni.x, zadni.y) or predmet.hitbox().collidepoint(predni.x, predni.y):
-                kolo.energie = min(kolo.energie + predmet.pridavek_energie, 100)
-                energie_predmety.remove(predmet)
+            predmet_mask = predmet.get_mask()
+            predmet_pos = (int(predmet.svet_x - camera.x), int(predmet.svet_y - camera.y))
+            for mask, pos in kolo.get_mask(ram_obrazky[int(kolo.animace_index)], rafek_img, camera):
+                offset = (predmet_pos[0] - pos[0], predmet_pos[1] - pos[1])
+                if mask.overlap(predmet_mask, offset):
+                    kolo.energie = min(kolo.energie + predmet.pridavek_energie, 100)
+                    energie_predmety.remove(predmet)
+                    break
 
         if kolo.rear_axel.get_position().x > vzdalenost_predmetu:
             vzdalenost_predmetu += rust_vzdalenosti

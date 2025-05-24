@@ -13,7 +13,7 @@ DAMP_REAR = 0.99
 SLAPANI_FROCE = 1
 INAIR_FORCE = 0.2
 WHEEL_COLLISION_CHECK_SUBDIVISIONS = 50
-GRAVITY = None  # Set this from hra.py after pygame.init()
+GRAVITY = None
 
 krok = None
 obtiznost_mapy = None
@@ -244,4 +244,21 @@ class Bike:
     self.front_axel.tick()
     self.rear_wheel.tick()
     self.front_wheel.tick()
-  
+
+  def get_mask(self, kolo_img, rafek_img, camera):
+    ram_mask = pygame.mask.from_surface(kolo_img)
+    ram_pos = (int(self.rear_axel.position.x - kolo_img.get_width() // 2 - camera.x),int(self.rear_axel.position.y - kolo_img.get_height() // 2 - camera.y))
+
+    rafek_img_rear = pygame.transform.rotozoom(rafek_img, (self.rear_wheel.get_position().x / (WHEEL_RADIUS)) * (-180 / math.pi), 1.0)
+    rafek_mask_rear = pygame.mask.from_surface(rafek_img_rear)
+    rafek_rect_rear = rafek_img_rear.get_rect(center=(int(self.rear_wheel.position.x - camera.x),int(self.rear_wheel.position.y - camera.y)))
+    rafek_pos_rear = (rafek_rect_rear.left, rafek_rect_rear.top)
+
+    uhel_front = (self.front_wheel.get_position().x / (WHEEL_RADIUS)) * (-180 / math.pi)
+    rafek_img_front = pygame.transform.rotozoom(rafek_img, uhel_front, 1.0)
+    rafek_mask_front = pygame.mask.from_surface(rafek_img_front)
+    rafek_rect_front = rafek_img_front.get_rect(center=(int(self.front_wheel.position.x - camera.x),int(self.front_wheel.position.y - camera.y)))
+    rafek_pos_front = (rafek_rect_front.left, rafek_rect_front.top)
+
+    return [(ram_mask, ram_pos),(rafek_mask_rear, rafek_pos_rear),(rafek_mask_front, rafek_pos_front)]
+
