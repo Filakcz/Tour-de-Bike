@@ -1,4 +1,5 @@
 import pygame
+import pygame.gfxdraw
 import math
 from fyzika import Vector, Bike, BIKE_LENGTH, WHEEL_RADIUS
 
@@ -29,7 +30,7 @@ def nahrat_obrazky():
         img_sirka = img.get_width()
         img_vyska = img.get_height()
         k = BIKE_LENGTH / img_sirka
-        img = pygame.transform.scale(img, (img_sirka * k, img_vyska * k))
+        img = pygame.transform.smoothscale(img, (img_sirka * k, img_vyska * k))
         obrazky.append(img)
     return obrazky
 
@@ -39,7 +40,7 @@ def blit_rotate_bottom_left(surf, image, bottom_left_pos, angle):
     offset_center_to_bl = pygame.math.Vector2(-width / 2, height / 2)
     rotated_offset = offset_center_to_bl.rotate(-angle)
     rotated_center = (bottom_left_pos[0] - rotated_offset.x, bottom_left_pos[1] - rotated_offset.y)
-    rotated_image = pygame.transform.rotate(image, angle)
+    rotated_image = pygame.transform.rotozoom(image, angle, 1.0)
     new_rect = rotated_image.get_rect(center=rotated_center)
     surf.blit(rotated_image, new_rect.topleft)
 
@@ -117,19 +118,24 @@ def vykresli_ui(screen, km, energie, kolo_x, rychlost, cas):
 
 def vykresli_teren(screen, kamera_x, kamera_y):
     body = [[0, obrazovka_vyska]]
-    x_obrazovka = 0
     x_svet = kamera_x - (kamera_x % fyzika.krok)
-    while x_obrazovka < obrazovka_sirka + fyzika.krok:
+
+    while True:
+        x_obrazovka = x_svet - kamera_x
+        if x_obrazovka > obrazovka_sirka + fyzika.krok:
+            break
         y = fyzika.generace_bod(x_svet) - kamera_y
         body.append([x_obrazovka, y])
         x_svet += fyzika.krok
-        x_obrazovka = x_svet - kamera_x
+
     body.append([obrazovka_sirka, obrazovka_vyska])
-    pygame.draw.polygon(screen, barva_trava, body)
+
+    pygame.gfxdraw.filled_polygon(screen, body, barva_trava)
+    pygame.gfxdraw.aapolygon(screen, body, (10, 50, 10))
 
 def vykresli_kolo(kolo, camera, rafek_img, kolo_img):
-    rafek_rear_rot = pygame.transform.rotate(rafek_img, (kolo.rear_wheel.get_position().x / (WHEEL_RADIUS)) * (-180 / math.pi))
-    rafek_front_rot = pygame.transform.rotate(rafek_img, (kolo.front_wheel.get_position().x / (WHEEL_RADIUS)) * (-180 / math.pi))
+    rafek_rear_rot = pygame.transform.rotozoom(rafek_img, (kolo.rear_wheel.get_position().x / (WHEEL_RADIUS)) * (-180 / math.pi), 1.0)
+    rafek_front_rot = pygame.transform.rotozoom(rafek_img, (kolo.front_wheel.get_position().x / (WHEEL_RADIUS)) * (-180 / math.pi), 1.0)
 
     rafek_rect_rear = rafek_rear_rot.get_rect(center=(int(kolo.rear_wheel.position.x - camera.x), int(kolo.rear_wheel.position.y - camera.y)))
     rafek_rect_front = rafek_front_rot.get_rect(center=(int(kolo.front_wheel.position.x - camera.x), int(kolo.front_wheel.position.y - camera.y)))
