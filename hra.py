@@ -1,8 +1,11 @@
 import pygame
 import math
-import random
+from fyzika import Vector, Bike, BIKE_LENGTH, WHEEL_RADIUS
 
 pygame.init()
+
+import fyzika
+fyzika.GRAVITY = Vector(0, 0.2)
 
 obrazovka_sirka = 1920
 obrazovka_vyska = 1080
@@ -10,21 +13,11 @@ screen = pygame.display.set_mode((obrazovka_sirka, obrazovka_vyska))
 pygame.display.set_caption("Tour de Bike")
 
 barva_nebe = (135, 206, 235)
-barva_trava = (0,154,23)
+barva_trava = (0, 154, 23)
 
-krok = 10
-
-def generace_bod(x):
-    i = x / 10
-    obtiznost = 1 + (x / obtiznost_mapy)
-    y = (obrazovka_vyska * 0.7
-         + math.sin(i * 0.004) * (120 * obtiznost)
-         + math.sin(i * 0.025 + math.cos(i * 0.002)) * (60 * obtiznost)
-         + math.sin(i * 0.13 + math.cos(i * 0.03)) * (18 + obtiznost * 5)
-         + math.sin(i * 0.0025)
-         + math.cos(i * 0.7) * 2
-    )
-    return y
+fyzika.krok = 10
+fyzika.obtiznost_mapy = 10000  # nizsi cislo = tezsi
+fyzika.obrazovka_vyska = obrazovka_vyska
 
 def nahrat_obrazky():
     obrazky = []
@@ -35,150 +28,49 @@ def nahrat_obrazky():
             img = pygame.image.load(f"img/kolo00{i}.png").convert_alpha()
         img_sirka = img.get_width()
         img_vyska = img.get_height()
-        img = pygame.transform.scale(img, (img_sirka//4, img_vyska//4))
+        k = BIKE_LENGTH / img_sirka
+        img = pygame.transform.scale(img, (img_sirka * k, img_vyska * k))
         obrazky.append(img)
     return obrazky
 
-def blitRotate(surf, image, origin, pivot, angle):
-    # https://stackoverflow.com/questions/15098900/how-to-set-the-pivot-point-center-of-rotation-for-pygame-transform-rotate
-    image_rect = image.get_rect(topleft=(origin[0] - pivot[0], origin[1] - pivot[1]))
-    offset_center_to_pivot = pygame.math.Vector2(origin) - image_rect.center
-    rotated_offset = offset_center_to_pivot.rotate(-angle)
-    rotated_image_center = (origin[0] - rotated_offset.x, origin[1] - rotated_offset.y)
+def blit_rotate_bottom_left(surf, image, bottom_left_pos, angle):
+    image_rect = image.get_rect()
+    width, height = image_rect.size
+    offset_center_to_bl = pygame.math.Vector2(-width / 2, height / 2)
+    rotated_offset = offset_center_to_bl.rotate(-angle)
+    rotated_center = (bottom_left_pos[0] - rotated_offset.x, bottom_left_pos[1] - rotated_offset.y)
     rotated_image = pygame.transform.rotate(image, angle)
-    rotated_image_rect = rotated_image.get_rect(center=rotated_image_center)
-    surf.blit(rotated_image, rotated_image_rect)
+    new_rect = rotated_image.get_rect(center=rotated_center)
+    surf.blit(rotated_image, new_rect.topleft)
 
-class CyklistickeKolo(pygame.sprite.Sprite):
-    def __init__(self, x, y, obrazky_ramu, obrazek_rafku):
-        super().__init__()
-        self.x = x
-        self.y = y
-        self.rychlost_x = 0
-        self.rychlost_y = 0
-        self.akcelerace = 0.7
-        self.top_rychlost = 70
-        self.gravitace = 1.2
-        self.odpor_vzduchu = 0.02
-        self.skok = 25
+def vykresli_text(surf, text, barva, pozice, zarovnat="left", velikost=50, font="Arial"):
+    font = pygame.font.SysFont(font, velikost)
+    text_surface = font.render(text, True, barva)
+    text_rect = text_surface.get_rect()
+    if zarovnat == "left":
+        text_rect.topleft = pozice
+    elif zarovnat == "center":
+        text_rect.center = pozice
+    elif zarovnat == "right":
+        text_rect.topright = pozice
+    surf.blit(text_surface, text_rect)
 
-        self.kolo_polomer = 48
-        self.kolo_vzdalenost = 140
-        self.x_zadni_kolo = self.x - self.kolo_vzdalenost // 2 
-        self.x_predni_kolo = self.x + self.kolo_vzdalenost // 2 
-        self.y_zadni_kolo = generace_bod(self.x_zadni_kolo)
-        self.y_predni_kolo = generace_bod(self.x_predni_kolo)
-        # y je bod doteku kola terenu
-        self.rafek_img = pygame.image.load(obrazek_rafku).convert_alpha()
-        self.rafek_img = pygame.transform.scale(self.rafek_img, (self.kolo_polomer*2, self.kolo_polomer*2))
-        self.rafek_uhel = 0
-
-        self.ram_obrazky = obrazky_ramu
-        self.animace_pocet = len(self.ram_obrazky)
-        self.animace_index = 0
-
-    def pohyb(self, keys):
-        if self.je_na_zemi():
-            if keys[pygame.K_a]:
-                self.rychlost_x -= self.akcelerace
-                self.animace_index -= 0.5
-                if self.animace_index < 0:
-                    self.animace_index = self.animace_pocet - 1
-            if keys[pygame.K_d]:
-                self.rychlost_x += self.akcelerace
-                self.animace_index += 0.5
-                if self.animace_index >= self.animace_pocet:
-                    self.animace_index = 0
-            if keys[pygame.K_w]:
-                self.rychlost_y = -self.skok
-        if keys[pygame.K_s]:
-            print("Zadni kolo x:", self.x_zadni_kolo)
-            print("Predni kolo x:", self.x_predni_kolo)
-            print("Zadni kolo y (spodek):", self.y_zadni_kolo)
-            print("Predni kolo y (spodek):", self.y_predni_kolo)
-            print("zadni kolo generace:", generace_bod(self.x_zadni_kolo))
-            print("Predni kolo generace:", generace_bod(self.x_predni_kolo))
-            print("Y:", self.y)
-            print("x:", self.x)
-
-    def aktualizace(self):
-        self.rychlost_y += self.gravitace
-
-        if not self.je_na_zemi(50):
-            self.y_zadni_kolo += self.rychlost_y
-            self.y_predni_kolo = self.y_zadni_kolo
-        else:
-            self.y_zadni_kolo += self.rychlost_y
-            self.y_predni_kolo += self.rychlost_y
-
-        self.rychlost_x *= (1 - self.odpor_vzduchu)
-        self.rychlost_x = max(-self.top_rychlost, min(self.rychlost_x, self.top_rychlost))
-        self.x += self.rychlost_x
-        self.x_zadni_kolo = self.x - self.kolo_vzdalenost // 2                                  
-        self.x_predni_kolo = self.x + self.kolo_vzdalenost // 2
-
-        teren_zadni = generace_bod(self.x_zadni_kolo)
-        if self.y_zadni_kolo > teren_zadni:
-            self.y_zadni_kolo = teren_zadni
-        teren_predni = generace_bod(self.x_predni_kolo)
-        if self.y_predni_kolo > teren_predni:
-            self.y_predni_kolo = teren_predni
-        if self.y_predni_kolo == teren_predni and self.y_zadni_kolo == teren_zadni:
-            self.rychlost_y = 0
-
-        self.y = (self.y_zadni_kolo + self.y_predni_kolo - (2*self.kolo_polomer)) / 2
-
-        if self.je_na_zemi():
-            self.rychlost_x += math.sin(self.naklon()) * self.gravitace
-
-    def je_na_zemi(self, tolerance=0):
-        if self.y_zadni_kolo >= (generace_bod(self.x_zadni_kolo)-tolerance) or self.y_predni_kolo >= (generace_bod(self.x_predni_kolo)-tolerance):
-            return True
-        else:
-            return False
-
-    def naklon(self):
-        stred_zadni = self.y_zadni_kolo - self.kolo_polomer
-        stred_predni = self.y_predni_kolo - self.kolo_polomer
-        return math.atan2(stred_predni - stred_zadni, self.kolo_vzdalenost)
-    
-    def vykresli(self, kamera_x, kamera_y, screen):
-        obvod = self.kolo_polomer * 2 * math.pi
-        self.rafek_uhel -= (self.rychlost_x / obvod) * 360
-        self.rafek_uhel %= 360
-
-        rotace_rafek_img = pygame.transform.rotate(self.rafek_img, self.rafek_uhel)
-        rafek_rect = rotace_rafek_img.get_rect(center=(self.x_zadni_kolo - kamera_x, self.y_zadni_kolo - self.kolo_polomer - kamera_y))
-        screen.blit(rotace_rafek_img, rafek_rect)
-        rafek_rect = rotace_rafek_img.get_rect(center=(self.x_predni_kolo - kamera_x, self.y_predni_kolo - self.kolo_polomer - kamera_y))
-        screen.blit(rotace_rafek_img, rafek_rect)
-
-
-        ram = self.ram_obrazky[int(self.animace_index)]
-        uhel_ramu = -math.degrees(self.naklon())
-
-        blitRotate(screen, ram, (self.x_zadni_kolo - kamera_x, self.y_zadni_kolo - self.kolo_polomer - kamera_y), (0,ram.get_height()), uhel_ramu)
-
-    def hitbox(self):
-        vyska_ramu = self.ram_obrazky[0].get_height()
-
-        return pygame.Rect(self.x_zadni_kolo, max(self.y_zadni_kolo, self.y_predni_kolo) - vyska_ramu, self.x_predni_kolo - self.x_zadni_kolo, vyska_ramu)
-
-
-class Banan(pygame.sprite.Sprite):
-    def __init__(self, x, y):
+class EnergetickyPredmet(pygame.sprite.Sprite):
+    def __init__(self, x, y, obrazek, pridavek_energie):
         super().__init__()
         self.svet_x = x
         self.svet_y = y
-        self.image = banan_img
+        self.pridavek_energie = pridavek_energie
+        self.image = obrazek
 
     def vykresli(self, screen, kamera_x, kamera_y):
         screen.blit(self.image, (self.svet_x - kamera_x, self.svet_y - kamera_y))
-    
 
-def vykresli_ui(screen, km, energie, kolo_x, rychlost):
-    text_km = font.render(f"Ujeto: {round(km/1000,1)} km", True, (0, 0, 0))
-    screen.blit(text_km, (22, 20))
+    def hitbox(self):
+        return pygame.Rect(self.svet_x, self.svet_y, self.image.get_width(), self.image.get_height())
+
+def vykresli_ui(screen, km, energie, kolo_x, rychlost, cas):
+    vykresli_text(screen, f"Ujeto: {round(km/1000,1)} km", (0, 0, 0), (22, 20))
 
     pygame.draw.rect(screen, (50, 50, 50), (20, 90, 250, 40))
     if energie > 0:
@@ -186,6 +78,14 @@ def vykresli_ui(screen, km, energie, kolo_x, rychlost):
     pygame.draw.rect(screen, (0, 0, 0), (20, 90, 250, 40), 2)
 
     screen.blit(tachometr_img, (50, 650))
+
+    sekundy = cas // 1000
+    minuty = sekundy // 60
+    hodiny = minuty // 60
+    sekundy = sekundy % 60
+    minuty = minuty % 60
+
+    vykresli_text(screen, f"{hodiny}:{minuty}:{sekundy}", (255, 255, 255), (252, 970), zarovnat="center", velikost=30)
 
     stred_x = 250
     stred_y = 845
@@ -196,100 +96,125 @@ def vykresli_ui(screen, km, energie, kolo_x, rychlost):
     konec_y = stred_y + delka_rucicky * math.sin(uhel_rad)
     pygame.draw.line(screen, (255, 0, 0), (stred_x, stred_y), (konec_x, konec_y), 6)
 
+    if energie_predmety:
+        predmety_vpravo = []
+        for predmet in energie_predmety:
+            if predmet.svet_x > kolo_x:
+                predmety_vpravo.append(predmet)
 
-    if banany:
-        nejblizsi_banan = min(banany, key=lambda b: b.svet_x - kolo_x if b.svet_x > kolo_x else float('inf'))
-        vzdalenost = nejblizsi_banan.svet_x - kolo_x
-        if vzdalenost > 0:
-            text_sipka = font.render(f"{round(vzdalenost/1000,1)} km →", True, (0,0,0))
-            text_rect = text_sipka.get_rect()
-            screen.blit(text_sipka, (obrazovka_sirka - text_rect.width - 20, 20))
+        nejblizsi = None
+        nejmensi_vzdalenost = None
 
+        for predmet in predmety_vpravo:
+            rozdil = predmet.svet_x - kolo_x
+            if nejmensi_vzdalenost is None or rozdil < nejmensi_vzdalenost:
+                nejblizsi = predmet
+                nejmensi_vzdalenost = rozdil
+
+        if nejblizsi:
+            vzdalenost = nejblizsi.svet_x - kolo_x
+            vykresli_text(screen, f"{round(vzdalenost/1000,1)} km →", (0, 0, 0), (obrazovka_sirka - 20, 20), zarovnat="right")
 
 def vykresli_teren(screen, kamera_x, kamera_y):
     body = [[0, obrazovka_vyska]]
     x_obrazovka = 0
-    x_svet = kamera_x - (kamera_x % krok)
-    while x_obrazovka < obrazovka_sirka + krok:
-        y = generace_bod(x_svet) - kamera_y
+    x_svet = kamera_x - (kamera_x % fyzika.krok)
+    while x_obrazovka < obrazovka_sirka + fyzika.krok:
+        y = fyzika.generace_bod(x_svet) - kamera_y
         body.append([x_obrazovka, y])
-        x_svet += krok
+        x_svet += fyzika.krok
         x_obrazovka = x_svet - kamera_x
     body.append([obrazovka_sirka, obrazovka_vyska])
     pygame.draw.polygon(screen, barva_trava, body)
 
+def vykresli_kolo(kolo, camera, rafek_img, kolo_img):
+    rafek_rear_rot = pygame.transform.rotate(rafek_img, (kolo.rear_wheel.get_position().x / (WHEEL_RADIUS)) * (-180 / math.pi))
+    rafek_front_rot = pygame.transform.rotate(rafek_img, (kolo.front_wheel.get_position().x / (WHEEL_RADIUS)) * (-180 / math.pi))
+
+    rafek_rect_rear = rafek_rear_rot.get_rect(center=(int(kolo.rear_wheel.position.x - camera.x), int(kolo.rear_wheel.position.y - camera.y)))
+    rafek_rect_front = rafek_front_rot.get_rect(center=(int(kolo.front_wheel.position.x - camera.x), int(kolo.front_wheel.position.y - camera.y)))
+
+    screen.blit(rafek_rear_rot, rafek_rect_rear.topleft)
+    screen.blit(rafek_front_rot, rafek_rect_front.topleft)
+
+    center = kolo.rear_axel.position
+    blit_rotate_bottom_left(screen, kolo_img, (int(center.x - camera.x), int(center.y - camera.y)), (-180 / math.pi) * math.atan2(kolo.front_axel.position.y - kolo.rear_axel.position.y, kolo.front_axel.position.x - kolo.rear_axel.position.x))
 
 font = pygame.font.SysFont("Arial", 50)
-banany = pygame.sprite.Group()
 banan_img = pygame.image.load("img/banan.png").convert_alpha()
-banan_img = pygame.transform.scale(banan_img, (100, 100))
+k = 80 / banan_img.get_width()
+banan_img = pygame.transform.scale(banan_img, (int(banan_img.get_width() * k), int(banan_img.get_height() * k)))
+banan_energie = 30
+tycinka_img = pygame.image.load("img/tycinka.png").convert_alpha()
+k = 120 / tycinka_img.get_width()
+tycinka_img = pygame.transform.scale(tycinka_img, (int(tycinka_img.get_width() * k), int(tycinka_img.get_height() * k)))
+tycinka_energie = 50
+
+energie_predmety = pygame.sprite.Group()
 
 tachometr_img = pygame.image.load("img/tachometr.png").convert_alpha()
 tachometr_img = pygame.transform.scale(tachometr_img, (400, 400))
 
-energie = 100
-obtiznost_mapy = 25000 # vyssi = tezsi
+obtiznost_mapy = 2500 # nizsi cislo = tezsi
 ztrata_energie = 0.05
 pridavek_energie = 30
-rust_vzdalenosti_bananu = 1.5
+rust_vzdalenosti = 500
 
 def main():
+    start_cas = pygame.time.get_ticks()
     bezi = True
     clock = pygame.time.Clock()
     ram_obrazky = nahrat_obrazky()
-    obrazek_rafku = "img/rafek.png"  
+    rafek_img = pygame.image.load("img/rafek.png").convert_alpha()
+    rafek_img = pygame.transform.scale(rafek_img, (WHEEL_RADIUS * 2, WHEEL_RADIUS * 2))
 
-    kolo = CyklistickeKolo(0, generace_bod(0), ram_obrazky, obrazek_rafku)
+    kolo = Bike(Vector(obrazovka_sirka / 2, 250))
 
     km_ujet = 0
-    energie = 100
-    vzdalenost_bananu = 1000
+    vzdalenost_predmetu = 1000
 
+    # TODO: upgrad z bananu na tycinku pro vice energie
+    energie_predmety.add(EnergetickyPredmet(1500, fyzika.generace_bod(1500)-250, tycinka_img, tycinka_energie))
 
-    banany.add(Banan(vzdalenost_bananu, generace_bod(vzdalenost_bananu)-random.randint(100,500)))
+    camera = Vector(0, 0)
 
     while bezi:
         screen.fill(barva_nebe)
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                bezi = False
+                pygame.quit()
+                quit()
 
-        keys = pygame.key.get_pressed()
-        if energie > 0:
-            kolo.pohyb(keys)
-        kolo.aktualizace()
+        kolo.tick()
+        vykresli_kolo(kolo, camera, rafek_img, ram_obrazky[int(kolo.animace_index)])
+        camera = fyzika.lerp(camera, kolo.rear_axel.position - Vector(-BIKE_LENGTH / 2 + obrazovka_sirka/2, obrazovka_vyska/2), 0.1)
 
-        kamera_x = kolo.x - obrazovka_sirka // 2
-        kamera_y = kolo.y - obrazovka_vyska // 1.5
+        vykresli_teren(screen, camera.x, camera.y)
+        
 
-        vykresli_teren(screen, kamera_x, kamera_y)
-        kolo.vykresli(kamera_x, kamera_y, screen)
+        for predmet in energie_predmety.copy():
+            predmet.vykresli(screen, camera.x, camera.y)
+            zadni = kolo.rear_wheel.get_position()
+            predni = kolo.front_wheel.get_position()
+            if predmet.hitbox().collidepoint(zadni.x, zadni.y) or predmet.hitbox().collidepoint(predni.x, predni.y):
+                kolo.energie = min(kolo.energie + predmet.pridavek_energie, 100)
+                energie_predmety.remove(predmet)
 
-        for banan in banany.copy():
-            banan.vykresli(screen, kamera_x, kamera_y)
-            hitbox = kolo.hitbox()
-            banan_rect = pygame.Rect(banan.svet_x, banan.svet_y, banan.image.get_width(), banan.image.get_height())
+        if kolo.rear_axel.get_position().x > vzdalenost_predmetu:
+            vzdalenost_predmetu += rust_vzdalenosti
+            nova_predmet_x = kolo.rear_axel.get_position().x + vzdalenost_predmetu
+            energie_predmety.add(EnergetickyPredmet(nova_predmet_x, fyzika.generace_bod(nova_predmet_x) - 150, banan_img, banan_energie))
 
-            if hitbox.colliderect(banan_rect):
-                energie = min(energie + pridavek_energie, 100)
-                banany.remove(banan)
+        km_ujet = kolo.rear_axel.get_position().x
 
-                vzdalenost_bananu *= rust_vzdalenosti_bananu
-                banany.add(Banan(kolo.x + vzdalenost_bananu, generace_bod(kolo.x + vzdalenost_bananu) - random.randint(100, 500)))
+        kolo.energie -= ztrata_energie
+        if kolo.energie < -10:
+            energie_predmety.empty()
+            main()
 
-        if kolo.x > vzdalenost_bananu:
-            vzdalenost_bananu *= rust_vzdalenosti_bananu
-            banany.add(Banan(kolo.x + vzdalenost_bananu, generace_bod(kolo.x + vzdalenost_bananu) - random.randint(100, 500)))
-
-        km_ujet = kolo.x
-
-        energie -= ztrata_energie
-        if energie < -10:
-            # hrac muze na setrvacnost ziskat energii :) - par sekund
-            bezi = False
-
-        vykresli_ui(screen, km_ujet, energie, kolo.x, kolo.rychlost_x)
-
+        rychlost = kolo.rear_wheel.get_speed().x
+        vykresli_ui(screen, km_ujet, kolo.energie, kolo.rear_axel.get_position().x, rychlost, pygame.time.get_ticks() - start_cas)
 
         pygame.display.flip()
         clock.tick(60)
