@@ -23,7 +23,7 @@ obrazovka_vyska = None
 def generace_bod(x):
     i = x / krok
     obtiznost = 1 + (x / obtiznost_mapy)
-    y = (obrazovka_vyska * 0.7
+    y = (obrazovka_vyska * 0.5
          + math.sin(i * 0.004) * (120 * obtiznost)
          + math.sin(i * 0.025 + math.cos(i * 0.002)) * (60 * obtiznost)
          + math.sin(i * 0.13 + math.cos(i * 0.03)) * (18 + obtiznost * 5)
@@ -246,8 +246,16 @@ class Bike:
     self.front_wheel.tick()
 
   def get_mask(self, kolo_img, rafek_img, camera):
-    ram_mask = pygame.mask.from_surface(kolo_img)
-    ram_pos = (int(self.rear_axel.position.x - kolo_img.get_width() // 2 - camera.x),int(self.rear_axel.position.y - kolo_img.get_height() // 2 - camera.y))
+    angle = (-180 / math.pi) * math.atan2(self.front_axel.position.y - self.rear_axel.position.y, self.front_axel.position.x - self.rear_axel.position.x)
+    ram_img = pygame.transform.rotozoom(kolo_img, angle, 1.0)
+    ram_mask = pygame.mask.from_surface(ram_img)
+    width, height = ram_img.get_width(), ram_img.get_height()
+    offset_center_to_bl = pygame.math.Vector2(-width / 2, height / 2)
+    rotated_offset = offset_center_to_bl.rotate(-angle)
+    center_x = self.rear_axel.position.x - camera.x - rotated_offset.x
+    center_y = self.rear_axel.position.y - camera.y - rotated_offset.y
+    ram_rect = ram_img.get_rect(center=(center_x, center_y))
+    ram_pos = (ram_rect.left, ram_rect.top)
 
     rafek_img_rear = pygame.transform.rotozoom(rafek_img, (self.rear_wheel.get_position().x / (WHEEL_RADIUS)) * (-180 / math.pi), 1.0)
     rafek_mask_rear = pygame.mask.from_surface(rafek_img_rear)
