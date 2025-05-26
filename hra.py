@@ -121,7 +121,14 @@ def vykresli_ui(screen, km, energie, kolo_x, rychlost, cas):
             vzdalenost = nejblizsi.svet_x - kolo_x
             vykresli_text(screen, f"{round(vzdalenost/1000,1)} km →", (0, 0, 0), (obrazovka_sirka - 20, 20), zarovnat="right")
 
-def vykresli_teren(screen, kamera_x, kamera_y):
+def vykresli_teren(screen, kamera_x, kamera_y, kaminky):
+    smazat_kaminky = []
+    for x in kaminky:
+        if x < kamera_x - 2 * obrazovka_sirka or x > kamera_x + obrazovka_sirka + 2 * obrazovka_sirka:
+            smazat_kaminky.append(x)
+    for x in smazat_kaminky:
+        del kaminky[x]
+    vykresli_text(screen, f"Pocet kaminku: {len(kaminky)}", (0, 0, 0), (220, 250), velikost=30)
     vyska_travy = 50
     barva_hlina = (120, 72, 0)
     barva_kamen = (80, 60, 40)
@@ -140,8 +147,8 @@ def vykresli_teren(screen, kamera_x, kamera_y):
             segment_kaminky = []
             for _ in range(3):
                 kaminek_x = random.randint(x, x + fyzika.krok)
-                kaminek_y = random.randint(int(y_hlina + 5), int(obrazovka_vyska - 10))
                 polomer = random.randint(1, 4)
+                kaminek_y = random.randint(int(y_hlina+10), int(obrazovka_vyska+10))
                 segment_kaminky.append((kaminek_x, kaminek_y, polomer))
             kaminky[x] = segment_kaminky
         x += fyzika.krok
@@ -186,10 +193,10 @@ def vykresli_kolo(kolo, camera, rafek_img, kolo_img):
     center = kolo.rear_axel.position
     blit_rotate_bottom_left(screen, kolo_img, (int(center.x - camera.x), int(center.y - camera.y)), (-180 / math.pi) * math.atan2(kolo.front_axel.position.y - kolo.rear_axel.position.y, kolo.front_axel.position.x - kolo.rear_axel.position.x))
 
-def vykresli_mraky(screen, kamera_x):
+def vykresli_mraky(screen, kamera_x, kamera_y, mraky):
     for m in mraky:
         x = int(m["x"] - kamera_x * m["parallax"])
-        y = m["y"]
+        y = int(m["y"] - kamera_y * m["parallax"])
         img = pygame.transform.smoothscale(mrak_img, (int(mrak_img.get_width() * m["velikost"]), int(mrak_img.get_height() * m["velikost"])))
         if x < -img.get_width():
             m["x"] += obrazovka_sirka * 2 + img.get_width()
@@ -225,22 +232,7 @@ obloha_img = pygame.transform.smoothscale(obloha_img, (obrazovka_sirka, obrazovk
 mrak_img = pygame.image.load("img/mrak.png").convert_alpha()
 mrak_img = pygame.transform.smoothscale(mrak_img, (mrak_img.get_width() // 2, mrak_img.get_height() // 2))
 
-mraky = []
-for vrstva in range(4):
-    parallax = 0.15 + 0.2 * vrstva
-    for i in range(2):
-        x = random.randint(0, obrazovka_sirka * 2)
-        y = 60 + vrstva * 60 + random.randint(-20, 20)
-        velikost = 0.7 + 0.3 * random.random()
-        mraky.append({
-            "x": x,
-            "y": y,
-            "parallax": parallax,
-            "velikost": velikost,
-            "vrstva": vrstva
-        })
 
-kaminky = {}
 
 ztrata_energie = 0.05
 pridavek_energie = 30
@@ -252,6 +244,22 @@ rust_vzdalenosti = 500
 
 
 def main():
+    mraky = []
+    for vrstva in range(4):
+        parallax = 0.15 + 0.2 * vrstva
+        for i in range(2):
+            x = random.randint(0, obrazovka_sirka * 2)
+            y = 60 + vrstva * 60 + random.randint(-20, 20)
+            velikost = 0.7 + 0.3 * random.random()
+            mraky.append({
+                "x": x,
+                "y": y,
+                "parallax": parallax,
+                "velikost": velikost,
+                "vrstva": vrstva
+            })
+
+    kaminky = {}
     start_cas = pygame.time.get_ticks()
     bezi = True
     clock = pygame.time.Clock()
@@ -260,6 +268,7 @@ def main():
 
     km_ujet = 0
     vzdalenost_predmetu = 1000
+    kolikaty_banan = 0
 
     # TODO: upgrad z bananu na tycinku pro vice energie
     energie_predmety.add(EnergetickyPredmet(1500, fyzika.generace_bod(1500)-190, tycinka_img, tycinka_energie))
@@ -268,7 +277,7 @@ def main():
 
     while bezi:
         screen.blit(obloha_img, (0, 0))
-        vykresli_mraky(screen, camera.x)
+        vykresli_mraky(screen, camera.x, camera.y, mraky)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -279,22 +288,24 @@ def main():
         vykresli_kolo(kolo, camera, rafek_img, ram_obrazky[int(kolo.animace_index)])
         camera = fyzika.lerp(camera, kolo.rear_axel.position - Vector(-BIKE_LENGTH / 2 + obrazovka_sirka/2, obrazovka_vyska/1.5), 0.1)
 
-        vykresli_teren(screen, camera.x, camera.y)
+        vykresli_teren(screen, camera.x, camera.y, kaminky)
         
 
         for predmet in energie_predmety.copy():
             predmet.vykresli(screen, camera.x, camera.y)
-            predmet_mask = predmet.get_mask()
-            predmet_pos = (int(predmet.svet_x - camera.x), int(predmet.svet_y - camera.y))
-            for mask, pos in kolo.get_mask(ram_obrazky[int(kolo.animace_index)], rafek_img, camera):
-                offset = (predmet_pos[0] - pos[0], predmet_pos[1] - pos[1])
-                if mask.overlap(predmet_mask, offset):
-                    kolo.energie = min(kolo.energie + predmet.pridavek_energie, 100)
-                    energie_predmety.remove(predmet)
-                    break
+            if abs(predmet.svet_x - kolo.rear_axel.position.x) < 300:
+                predmet_mask = predmet.get_mask()
+                predmet_pos = (int(predmet.svet_x - camera.x), int(predmet.svet_y - camera.y))
+                for mask, pos in kolo.get_mask(ram_obrazky[int(kolo.animace_index)], rafek_img, camera):
+                    offset = (predmet_pos[0] - pos[0], predmet_pos[1] - pos[1])
+                    if mask.overlap(predmet_mask, offset):
+                        kolo.energie = min(kolo.energie + predmet.pridavek_energie, 100)
+                        energie_predmety.remove(predmet)
+                        break
 
         if kolo.rear_axel.get_position().x > vzdalenost_predmetu:
-            vzdalenost_predmetu += rust_vzdalenosti
+            kolikaty_banan += 1
+            vzdalenost_predmetu += rust_vzdalenosti * kolikaty_banan
             nova_predmet_x = kolo.rear_axel.get_position().x + vzdalenost_predmetu
             energie_predmety.add(EnergetickyPredmet(nova_predmet_x, fyzika.generace_bod(nova_predmet_x) - 150, banan_img, banan_energie))
 
@@ -307,6 +318,9 @@ def main():
 
         rychlost = kolo.rear_wheel.get_speed().x
         vykresli_ui(screen, km_ujet, kolo.energie, kolo.rear_axel.get_position().x, rychlost, pygame.time.get_ticks() - start_cas)
+
+        fps = clock.get_fps()
+        vykresli_text(screen, f"FPS: {int(fps)}", (0, 0, 0), (120, 150), velikost=100)
 
         pygame.display.flip()
         clock.tick(60)
