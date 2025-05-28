@@ -23,8 +23,7 @@ obrazovka_vyska = None
 def generace_bod(x):
     i = x / krok
     obtiznost = 1 + (x / obtiznost_mapy)
-    y = (obrazovka_vyska * 0.5
-         + math.sin(i * 0.004) * (120 * obtiznost)
+    y = (math.sin(i * 0.004) * (120 * obtiznost)
          + math.sin(i * 0.025 + math.cos(i * 0.002)) * (60 * obtiznost)
          + math.sin(i * 0.13 + math.cos(i * 0.03)) * (18 + obtiznost * 5)
          + math.sin(i * 0.0025)

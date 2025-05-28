@@ -128,53 +128,60 @@ def vykresli_teren(screen, kamera_x, kamera_y, kaminky):
             smazat_kaminky.append(x)
     for x in smazat_kaminky:
         del kaminky[x]
-    vykresli_text(screen, f"Pocet kaminku: {len(kaminky)}", (0, 0, 0), (220, 250), velikost=30)
     vyska_travy = 50
     barva_hlina = (120, 72, 0)
     barva_kamen = (80, 60, 40)
 
     body_trava = [[0, obrazovka_vyska]]
-    body_hlina = [[0, obrazovka_vyska]]
+    body_hlina = [[0, obrazovka_vyska+ vyska_travy]]
     body_hrana = []
-
     x_svet = kamera_x - (kamera_x % fyzika.krok)
 
     x = x_svet
+    while True:
+        x_obrazovka = x - kamera_x - fyzika.krok
+        if x_obrazovka > obrazovka_sirka + fyzika.krok:
+            break
+        y = fyzika.generace_bod(x) - kamera_y
+        body_trava.append([x_obrazovka, y])
+        perp_vec = (Vector(body_trava[-1][0], body_trava[-1][1]) - Vector(body_trava[-2][0], body_trava[-2][1])).perpendicular()
+        if perp_vec.y < 0:
+            perp_vec.x *= -1
+            perp_vec.y *= -1
+        
+        hlina_vec = Vector(x_obrazovka, y) + perp_vec * vyska_travy
+        body_hlina.append([hlina_vec.x, hlina_vec.y])
+        body_hrana.append((x_obrazovka, y))
+        x += fyzika.krok
+
+    body_trava.append([obrazovka_sirka, fyzika.generace_bod(kamera_x + obrazovka_sirka + fyzika.krok) - kamera_y])
+    body_trava.append([obrazovka_sirka, obrazovka_vyska])
+
+    body_hlina.append([obrazovka_sirka, fyzika.generace_bod(kamera_x + obrazovka_sirka + fyzika.krok) + vyska_travy - kamera_y])
+    body_hlina.append([obrazovka_sirka, obrazovka_vyska])
+
+    pygame.gfxdraw.filled_polygon(screen, body_trava, barva_trava)
+    pygame.gfxdraw.filled_polygon(screen, body_hlina, barva_hlina)
+
+    x = int(x_svet)
     while x < kamera_x + obrazovka_sirka + fyzika.krok:
         if x not in kaminky:
             y = fyzika.generace_bod(x)
             y_hlina = y + vyska_travy
             segment_kaminky = []
-            for _ in range(3):
+            for _ in range(20):
                 kaminek_x = random.randint(x, x + fyzika.krok)
                 polomer = random.randint(1, 4)
-                kaminek_y = random.randint(int(y_hlina+10), int(obrazovka_vyska+10))
+                kaminek_y = random.randint(int(y_hlina+10), int(y_hlina + obrazovka_vyska+10))
                 segment_kaminky.append((kaminek_x, kaminek_y, polomer))
             kaminky[x] = segment_kaminky
         x += fyzika.krok
 
-    x = x_svet
-    while True:
-        x_obrazovka = x - kamera_x
-        if x_obrazovka > obrazovka_sirka + fyzika.krok:
-            break
-        y = fyzika.generace_bod(x) - kamera_y
-        body_trava.append([x_obrazovka, y])
-        body_hlina.append([x_obrazovka, y + vyska_travy])
-        body_hrana.append((x_obrazovka, y))
-        x += fyzika.krok
-
-    body_trava.append([obrazovka_sirka, obrazovka_vyska])
-    body_hlina.append([obrazovka_sirka, obrazovka_vyska])
-
-    pygame.gfxdraw.filled_polygon(screen, body_trava, barva_trava)
-    pygame.gfxdraw.aapolygon(screen, body_trava, (10, 50, 10))
-    pygame.gfxdraw.filled_polygon(screen, body_hlina, barva_hlina)
-
     for _, kaminky_segment in kaminky.items():
         for kaminek_x, kaminek_y, polomer in kaminky_segment:
-            if kamera_x < kaminek_x < kamera_x + obrazovka_sirka:
-                pygame.draw.circle(screen, barva_kamen, (int(kaminek_x - kamera_x), int(kaminek_y - kamera_y)), polomer)
+            if kamera_x < kaminek_x < kamera_x + obrazovka_sirka and int(kaminek_y - kamera_y) < obrazovka_vyska:
+                pygame.draw.circle(screen, barva_kamen, (int(kaminek_x - kamera_x), int(kaminek_y - kamera_y)),polomer)
+
 
     pygame.draw.lines(screen, (0, 0, 0), False, body_hrana, 2)
 
@@ -232,24 +239,23 @@ obloha_img = pygame.transform.smoothscale(obloha_img, (obrazovka_sirka, obrazovk
 mrak_img = pygame.image.load("img/mrak.png").convert_alpha()
 mrak_img = pygame.transform.smoothscale(mrak_img, (mrak_img.get_width() // 2, mrak_img.get_height() // 2))
 
-
-
 ztrata_energie = 0.05
 pridavek_energie = 30
 rust_vzdalenosti = 500
 
 # TODO: main menu, nastaveni, ulozeni a nacteni hry, vylepseni kola, ruzne mapy
 # TODO: hudba, zvuk
-# TODO: credity - ondra = fyzika, antialiasing
+# TODO: credity - ondra = fyzika, antialiasing, rosta - bug fix kaminku
+
 
 
 def main():
     mraky = []
-    for vrstva in range(4):
+    for vrstva in range(3):
         parallax = 0.15 + 0.2 * vrstva
         for i in range(2):
             x = random.randint(0, obrazovka_sirka * 2)
-            y = 60 + vrstva * 60 + random.randint(-20, 20)
+            y = vrstva * 10 - random.randint(70, 80)
             velikost = 0.7 + 0.3 * random.random()
             mraky.append({
                 "x": x,
@@ -311,7 +317,7 @@ def main():
 
         km_ujet = kolo.rear_axel.get_position().x
 
-        kolo.energie -= ztrata_energie
+        #kolo.energie -= ztrata_energie
         if kolo.energie < -10:
             energie_predmety.empty()
             main()
