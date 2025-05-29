@@ -36,6 +36,8 @@ def nahrat_obrazky():
     return obrazky
 
 def blit_rotate_bottom_left(surf, image, bottom_left_pos, angle):
+    global maska_kola, kolo_pos
+    
     image_rect = image.get_rect()
     width, height = image_rect.size
     offset_center_to_bl = pygame.math.Vector2(-width / 2, height / 2)
@@ -43,6 +45,9 @@ def blit_rotate_bottom_left(surf, image, bottom_left_pos, angle):
     rotated_center = (bottom_left_pos[0] - rotated_offset.x, bottom_left_pos[1] - rotated_offset.y)
     rotated_image = pygame.transform.rotozoom(image, angle, 1.0)
     new_rect = rotated_image.get_rect(center=rotated_center)
+    maska_kola = pygame.mask.from_surface(rotated_image)
+    kolo_pos = (new_rect.left, new_rect.top)
+
     surf.blit(rotated_image, new_rect.topleft)
 
 def vykresli_text(surf, text, barva, pozice, zarovnat="left", velikost=50, font="Arial"):
@@ -172,7 +177,7 @@ def vykresli_teren(screen, kamera_x, kamera_y, kaminky):
             for _ in range(20):
                 kaminek_x = random.randint(x, x + fyzika.krok)
                 polomer = random.randint(1, 4)
-                kaminek_y = random.randint(int(y_hlina+10), int(y_hlina + obrazovka_vyska+10))
+                kaminek_y = random.randint(int(y_hlina+30), int(y_hlina + obrazovka_vyska+30))
                 segment_kaminky.append((kaminek_x, kaminek_y, polomer))
             kaminky[x] = segment_kaminky
         x += fyzika.krok
@@ -188,11 +193,16 @@ def vykresli_teren(screen, kamera_x, kamera_y, kaminky):
 
 
 def vykresli_kolo(kolo, camera, rafek_img, kolo_img):
+    global rafek_mask_front, rafek_mask_rear, rafek_pos_front, rafek_pos_rear
     rafek_rear_rot = pygame.transform.rotozoom(rafek_img, (kolo.rear_wheel.get_position().x / (WHEEL_RADIUS)) * (-180 / math.pi), 1.0)
+    rafek_mask_rear = pygame.mask.from_surface(rafek_rear_rot)
     rafek_front_rot = pygame.transform.rotozoom(rafek_img, (kolo.front_wheel.get_position().x / (WHEEL_RADIUS)) * (-180 / math.pi), 1.0)
+    rafek_mask_front = pygame.mask.from_surface(rafek_front_rot)
 
     rafek_rect_rear = rafek_rear_rot.get_rect(center=(int(kolo.rear_wheel.position.x - camera.x), int(kolo.rear_wheel.position.y - camera.y)))
+    rafek_pos_rear = (rafek_rect_rear.left, rafek_rect_rear.top)
     rafek_rect_front = rafek_front_rot.get_rect(center=(int(kolo.front_wheel.position.x - camera.x), int(kolo.front_wheel.position.y - camera.y)))
+    rafek_pos_front = (rafek_rect_front.left, rafek_rect_front.top)
 
     screen.blit(rafek_rear_rot, rafek_rect_rear.topleft)
     screen.blit(rafek_front_rot, rafek_rect_front.topleft)
@@ -299,10 +309,11 @@ def main():
 
         for predmet in energie_predmety.copy():
             predmet.vykresli(screen, camera.x, camera.y)
-            if abs(predmet.svet_x - kolo.rear_axel.position.x) < 300:
+            if abs(predmet.svet_x - kolo.rear_axel.position.x) < 400:
                 predmet_mask = predmet.get_mask()
                 predmet_pos = (int(predmet.svet_x - camera.x), int(predmet.svet_y - camera.y))
-                for mask, pos in kolo.get_mask(ram_obrazky[int(kolo.animace_index)], rafek_img, camera):
+                kolo_masky = [(maska_kola, kolo_pos), (rafek_mask_rear, rafek_pos_rear),(rafek_mask_front, rafek_pos_front)]
+                for mask, pos in kolo_masky:
                     offset = (predmet_pos[0] - pos[0], predmet_pos[1] - pos[1])
                     if mask.overlap(predmet_mask, offset):
                         kolo.energie = min(kolo.energie + predmet.pridavek_energie, 100)
@@ -326,7 +337,7 @@ def main():
         vykresli_ui(screen, km_ujet, kolo.energie, kolo.rear_axel.get_position().x, rychlost, pygame.time.get_ticks() - start_cas)
 
         fps = clock.get_fps()
-        vykresli_text(screen, f"FPS: {int(fps)}", (0, 0, 0), (120, 150), velikost=100)
+        vykresli_text(screen, f"FPS: {int(fps)}", (0, 0, 0), (20, 150), velikost=100)
 
         pygame.display.flip()
         clock.tick(60)

@@ -19,17 +19,21 @@ krok = None
 obtiznost_mapy = None
 obrazovka_vyska = None
 
+cache_hodnot = {}
 
 def generace_bod(x):
-    i = x / krok
-    obtiznost = 1 + (x / obtiznost_mapy)
-    y = (math.sin(i * 0.004) * (120 * obtiznost)
-         + math.sin(i * 0.025 + math.cos(i * 0.002)) * (60 * obtiznost)
-         + math.sin(i * 0.13 + math.cos(i * 0.03)) * (18 + obtiznost * 5)
-         + math.sin(i * 0.0025)
-         + math.cos(i * 0.7) * 2
-    )
-    return y
+  if x in cache_hodnot:
+    return cache_hodnot[x]
+  i = x / krok
+  obtiznost = 1 + (x / obtiznost_mapy)
+  y = (math.sin(i * 0.004) * (120 * obtiznost)
+        + math.sin(i * 0.025 + math.cos(i * 0.002)) * (60 * obtiznost)
+        + math.sin(i * 0.13 + math.cos(i * 0.03)) * (18 + obtiznost * 5)
+        + math.sin(i * 0.0025)
+        + math.cos(i * 0.7) * 2
+  )
+  cache_hodnot[x] = y
+  return y
 
 class Vector:
   def __init__(self, x, y):
@@ -162,6 +166,8 @@ class Bike:
     self.energie = 100
 
   def tick(self):
+    keys = pygame.key.get_pressed()
+
     self.rear_axel.apply_gravity(GRAVITY)
     self.front_axel.apply_gravity(GRAVITY)
     self.rear_wheel.apply_gravity(GRAVITY)
@@ -193,7 +199,6 @@ class Bike:
     if touch_point is not None:
       new_position = self.rear_wheel.get_position() + (self.rear_wheel.get_position() - touch_point).normalized() * (WHEEL_RADIUS - self.rear_wheel.get_position().distance_to(touch_point))
       self.rear_wheel.set_position(new_position)
-      keys = pygame.key.get_pressed()
       if self.energie > 0:
         if keys[pygame.K_a]:
           self.animace_index -= self.rychlost_animace
@@ -206,7 +211,6 @@ class Bike:
               self.animace_index = 0
           self.rear_wheel.apply_force((self.front_axel.position - self.rear_axel.position).normalized() * SLAPANI_FROCE)
 
-    keys = pygame.key.get_pressed()
     if keys[pygame.K_a]:
         if self.energie > 0:
             self.animace_index -= self.rychlost_animace
@@ -244,28 +248,4 @@ class Bike:
     self.rear_wheel.tick()
     self.front_wheel.tick()
 
-  def get_mask(self, kolo_img, rafek_img, camera):
-    angle = (-180 / math.pi) * math.atan2(self.front_axel.position.y - self.rear_axel.position.y, self.front_axel.position.x - self.rear_axel.position.x)
-    ram_img = pygame.transform.rotozoom(kolo_img, angle, 1.0)
-    ram_mask = pygame.mask.from_surface(ram_img)
-    width, height = ram_img.get_width(), ram_img.get_height()
-    offset_center_to_bl = pygame.math.Vector2(-width / 2, height / 2)
-    rotated_offset = offset_center_to_bl.rotate(-angle)
-    center_x = self.rear_axel.position.x - camera.x - rotated_offset.x
-    center_y = self.rear_axel.position.y - camera.y - rotated_offset.y
-    ram_rect = ram_img.get_rect(center=(center_x, center_y))
-    ram_pos = (ram_rect.left, ram_rect.top)
-
-    rafek_img_rear = pygame.transform.rotozoom(rafek_img, (self.rear_wheel.get_position().x / (WHEEL_RADIUS)) * (-180 / math.pi), 1.0)
-    rafek_mask_rear = pygame.mask.from_surface(rafek_img_rear)
-    rafek_rect_rear = rafek_img_rear.get_rect(center=(int(self.rear_wheel.position.x - camera.x),int(self.rear_wheel.position.y - camera.y)))
-    rafek_pos_rear = (rafek_rect_rear.left, rafek_rect_rear.top)
-
-    uhel_front = (self.front_wheel.get_position().x / (WHEEL_RADIUS)) * (-180 / math.pi)
-    rafek_img_front = pygame.transform.rotozoom(rafek_img, uhel_front, 1.0)
-    rafek_mask_front = pygame.mask.from_surface(rafek_img_front)
-    rafek_rect_front = rafek_img_front.get_rect(center=(int(self.front_wheel.position.x - camera.x),int(self.front_wheel.position.y - camera.y)))
-    rafek_pos_front = (rafek_rect_front.left, rafek_rect_front.top)
-
-    return [(ram_mask, ram_pos),(rafek_mask_rear, rafek_pos_rear),(rafek_mask_front, rafek_pos_front)]
 
