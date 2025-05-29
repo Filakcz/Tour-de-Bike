@@ -174,7 +174,7 @@ def vykresli_teren(screen, kamera_x, kamera_y, kaminky):
             y = fyzika.generace_bod(x)
             y_hlina = y + vyska_travy
             segment_kaminky = []
-            for _ in range(20):
+            for _ in range(10):
                 kaminek_x = random.randint(x, x + fyzika.krok)
                 polomer = random.randint(1, 4)
                 kaminek_y = random.randint(int(y_hlina+30), int(y_hlina + obrazovka_vyska+30))
@@ -342,4 +342,3 @@ def main():
         pygame.display.flip()
         clock.tick(60)
 
-main()
