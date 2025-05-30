@@ -226,15 +226,21 @@ def vykresli_mraky(screen, kamera_x, kamera_y, mraky):
             x = int(m["x"] - kamera_x * m["parallax"])
         screen.blit(img, (x, y))
 
-font = pygame.font.SysFont("Arial", 50)
 banan_img = pygame.image.load("img/banan.png").convert_alpha()
 k = 70 / banan_img.get_width()
 banan_img = pygame.transform.smoothscale(banan_img, (int(banan_img.get_width() * k), int(banan_img.get_height() * k)))
 banan_energie = 30
+
 tycinka_img = pygame.image.load("img/tycinka.png").convert_alpha()
 k = 120 / tycinka_img.get_width()
 tycinka_img = pygame.transform.smoothscale(tycinka_img, (int(tycinka_img.get_width() * k), int(tycinka_img.get_height() * k)))
 tycinka_energie = 50
+
+kure_img = pygame.image.load("img/kure.png").convert_alpha()
+k = 85 / kure_img.get_width()
+kure_img = pygame.transform.smoothscale(kure_img, (int(kure_img.get_width() * k), int(kure_img.get_height() * k)))
+kure_energie = 100
+
 
 energie_predmety = pygame.sprite.Group()
 
@@ -288,8 +294,8 @@ def main(kolo):
     vzdalenost_predmetu = 1000
     kolikaty_banan = 0
 
-    # TODO: upgrad z bananu na tycinku pro vice energie
     energie_predmety.add(EnergetickyPredmet(1500, fyzika.generace_bod(1500)-190, tycinka_img, tycinka_energie))
+    energie_predmety.add(EnergetickyPredmet(1400, fyzika.generace_bod(1400)-190, kure_img, kure_energie))
 
     camera = Vector(0, 0)
 

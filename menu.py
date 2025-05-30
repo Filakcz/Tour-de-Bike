@@ -22,12 +22,15 @@ def menu():
         screen.blit(menu_img, (0,0))
 
         tlacitko_start = pygame.Rect(50,335,250,150)
-        tlacitko_vylepseni = pygame.Rect(50,535,500,150)
-        tlacitko_konec = pygame.Rect(50,750,250,150)
+        tlacitko_vylepseni = pygame.Rect(50,525,500,150)
+        tlacitko_nastaveni = pygame.Rect(50,700,450,150)
+        tlacitko_konec = pygame.Rect(50,880,250,150)
+        
         
         # hitboxy
         pygame.draw.rect(screen, "red",tlacitko_start,1)
         pygame.draw.rect(screen, "red",tlacitko_vylepseni,1)
+        pygame.draw.rect(screen, "red", tlacitko_nastaveni, 1)
         pygame.draw.rect(screen, "red",tlacitko_konec,1)
 
         pygame.display.flip()
@@ -47,6 +50,8 @@ def menu():
                     spust_hru(akt_kolo)
                 elif tlacitko_vylepseni.collidepoint(event.pos):
                     print("vylepseni neni :(")
+                elif tlacitko_nastaveni.collidepoint(event.pos):
+                    print("nastaveni neni")
                 elif tlacitko_konec.collidepoint(event.pos):
                     pygame.quit()
                     quit()
