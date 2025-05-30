@@ -6,10 +6,6 @@ import pygame
 
 BIKE_LENGTH = 120
 WHEEL_RADIUS = 40
-SUS_REAR = 0.15
-SUS_FRONT = 0.15
-DAMP_FRONT = 0.99
-DAMP_REAR = 0.99
 SLAPANI_FROCE = 1
 INAIR_FORCE = 0.2
 WHEEL_COLLISION_CHECK_SUBDIVISIONS = 50
@@ -19,9 +15,22 @@ krok = None
 obtiznost_mapy = None
 obrazovka_vyska = None
 
+def nastav_kolo(typ):
+    global SUS_FRONT, SUS_REAR, DAMP_FRONT, DAMP_REAR
+    if typ == "silnicka":
+        SUS_FRONT, SUS_REAR = 0.5, 0.5
+        DAMP_FRONT, DAMP_REAR = 0.95, 0.95
+    elif typ == "hardtail":
+        SUS_FRONT, SUS_REAR = 0.12, 0.5
+        DAMP_FRONT, DAMP_REAR = 0.5, 0.9
+    elif typ == "celopero":
+        SUS_FRONT, SUS_REAR = 0.12, 0.12
+        DAMP_FRONT, DAMP_REAR = -0.4, -0.4
+
 cache_hodnot = {}
 
 def generace_bod(x):
+  #return -x * 0.01
   if x in cache_hodnot:
     return cache_hodnot[x]
   i = x / krok

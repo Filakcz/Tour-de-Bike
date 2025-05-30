@@ -21,26 +21,29 @@ fyzika.krok = 10
 fyzika.obtiznost_mapy = 10000 # nizsi cislo = tezsi
 fyzika.obrazovka_vyska = obrazovka_vyska
 
-def nahrat_obrazky():
+def nahrat_obrazky(kolo):
+    global pomer
     obrazky = []
+    
     for i in range(14):
         if i < 10:
-            img = pygame.image.load(f"img/kolo000{i}.png").convert_alpha()
+            img = pygame.image.load(f"img/{kolo}/kolo000{i}.png").convert_alpha()
         else:
-            img = pygame.image.load(f"img/kolo00{i}.png").convert_alpha()
+            img = pygame.image.load(f"img/{kolo}/kolo00{i}.png").convert_alpha()
         img_sirka = img.get_width()
         img_vyska = img.get_height()
-        k = BIKE_LENGTH / img_sirka
-        img = pygame.transform.smoothscale(img, (img_sirka * k, img_vyska * k))
+        pomer = BIKE_LENGTH / img_sirka
+        img = pygame.transform.smoothscale(img, (img_sirka * pomer, img_vyska * pomer))
         obrazky.append(img)
     return obrazky
 
 def blit_rotate_bottom_left(surf, image, bottom_left_pos, angle):
     global maska_kola, kolo_pos
-    
+    offset_y = pomer * 80
+
     image_rect = image.get_rect()
     width, height = image_rect.size
-    offset_center_to_bl = pygame.math.Vector2(-width / 2, height / 2)
+    offset_center_to_bl = pygame.math.Vector2(-width / 2, height / 2 - offset_y)  # upraveno zde
     rotated_offset = offset_center_to_bl.rotate(-angle)
     rotated_center = (bottom_left_pos[0] - rotated_offset.x, bottom_left_pos[1] - rotated_offset.y)
     rotated_image = pygame.transform.rotozoom(image, angle, 1.0)
@@ -238,8 +241,6 @@ energie_predmety = pygame.sprite.Group()
 rafek_img = pygame.image.load("img/rafek.png").convert_alpha()
 rafek_img = pygame.transform.smoothscale(rafek_img, (WHEEL_RADIUS * 2, WHEEL_RADIUS * 2))
 
-ram_obrazky = nahrat_obrazky()
-
 tachometr_img = pygame.image.load("img/tachometr.png").convert_alpha()
 tachometr_img = pygame.transform.smoothscale(tachometr_img, (400, 400))
 
@@ -258,8 +259,9 @@ rust_vzdalenosti = 500
 # TODO: credity - ondra = fyzika, antialiasing, rosta - bug fix kaminku
 
 
+def main(kolo):
+    ram_obrazky = nahrat_obrazky(kolo)
 
-def main():
     mraky = []
     for vrstva in range(3):
         parallax = 0.15 + 0.2 * vrstva

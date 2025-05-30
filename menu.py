@@ -1,5 +1,6 @@
 import pygame
 from hra import main as spust_hru
+from fyzika import nastav_kolo
 
 pygame.init()
 
@@ -37,7 +38,13 @@ def menu():
                 quit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if tlacitko_start.collidepoint(event.pos):
-                    spust_hru()
+                    # silnicka, hardtail, celopero
+                    # akt_kolo = "silnicka"
+                    # akt_kolo = "hardtail"
+                    akt_kolo = "celopero"
+                    nastav_kolo(akt_kolo)
+                    
+                    spust_hru(akt_kolo)
                 elif tlacitko_vylepseni.collidepoint(event.pos):
                     print("vylepseni neni :(")
                 elif tlacitko_konec.collidepoint(event.pos):
