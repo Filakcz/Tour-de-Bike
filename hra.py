@@ -82,6 +82,23 @@ class EnergetickyPredmet(pygame.sprite.Sprite):
     
     def get_position(self):
         return int(self.svet_x), int(self.svet_y)
+    
+class Mince(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.svet_x = x
+        self.svet_y = y
+        self.image = mince_img
+        self.mask = pygame.mask.from_surface(self.image)
+
+    def vykresli(self, screen, kamera_x, kamera_y):
+        screen.blit(self.image, (self.svet_x - kamera_x, self.svet_y - kamera_y))
+
+    def get_mask(self):
+        return self.mask
+
+    def get_position(self):
+        return int(self.svet_x), int(self.svet_y)
 
 def vykresli_ui(screen, km, energie, kolo_x, rychlost, cas):
     vykresli_text(screen, f"Ujeto: {round(km/1000,1)} km", (0, 0, 0), (22, 20))
@@ -241,8 +258,15 @@ k = 85 / kure_img.get_width()
 kure_img = pygame.transform.smoothscale(kure_img, (int(kure_img.get_width() * k), int(kure_img.get_height() * k)))
 kure_energie = 100
 
-
 energie_predmety = pygame.sprite.Group()
+
+mince_img = pygame.image.load("img/mince.png").convert_alpha()
+k = 60 / mince_img.get_width()
+mince_img = pygame.transform.smoothscale(mince_img, (int(mince_img.get_width() * k), int(mince_img.get_height() * k)))
+
+mince_predmety = pygame.sprite.Group()
+vzadelnost_minci = 500
+prachy = 0
 
 rafek_img = pygame.image.load("img/rafek.png").convert_alpha()
 rafek_img = pygame.transform.smoothscale(rafek_img, (WHEEL_RADIUS * 2, WHEEL_RADIUS * 2))
@@ -257,15 +281,15 @@ mrak_img = pygame.image.load("img/mrak.png").convert_alpha()
 mrak_img = pygame.transform.smoothscale(mrak_img, (mrak_img.get_width() // 2, mrak_img.get_height() // 2))
 
 ztrata_energie = 0.05
-pridavek_energie = 30
-rust_vzdalenosti = 500
+rust_vzdalenosti = 200
 
 # TODO: main menu, nastaveni, ulozeni a nacteni hry, vylepseni kola, ruzne mapy
 # TODO: hudba, zvuk
 # TODO: credity - ondra = fyzika, antialiasing, rosta - bug fix kaminku
 
 
-def main(kolo):
+def main(kolo, vybrane_jidlo):
+    global prachy
     ram_obrazky = nahrat_obrazky(kolo)
 
     mraky = []
@@ -294,8 +318,24 @@ def main(kolo):
     vzdalenost_predmetu = 1000
     kolikaty_banan = 0
 
-    energie_predmety.add(EnergetickyPredmet(1500, fyzika.generace_bod(1500)-190, tycinka_img, tycinka_energie))
-    energie_predmety.add(EnergetickyPredmet(1400, fyzika.generace_bod(1400)-190, kure_img, kure_energie))
+    #energie_predmety.add(EnergetickyPredmet(1500, fyzika.generace_bod(1500)-190, tycinka_img, tycinka_energie))
+    #energie_predmety.add(EnergetickyPredmet(1400, fyzika.generace_bod(1400)-190, kure_img, kure_energie))
+
+    if vybrane_jidlo == 0:
+        jidlo_img = banan_img
+        jidlo_energie = banan_energie
+    elif vybrane_jidlo == 1:
+        jidlo_img = tycinka_img
+        jidlo_energie = tycinka_energie
+    elif vybrane_jidlo == 2:
+        jidlo_img = kure_img
+        jidlo_energie = kure_energie
+    else:
+        jidlo_img = banan_img
+        jidlo_energie = banan_energie
+
+    mince_predmety.empty()
+    posledni_mince = 0
 
     camera = Vector(0, 0)
 
@@ -313,7 +353,31 @@ def main(kolo):
         camera = fyzika.lerp(camera, kolo.rear_axel.position - Vector(-BIKE_LENGTH / 2 + obrazovka_sirka/2, obrazovka_vyska/1.5), 0.1)
 
         vykresli_teren(screen, camera.x, camera.y, kaminky)
-        
+
+        while kolo.rear_axel.position.x + obrazovka_sirka >= posledni_mince + vzadelnost_minci:
+
+            posledni_mince += vzadelnost_minci
+
+            je_blizko = False
+            for energie_predmet in energie_predmety.copy():
+                if abs(posledni_mince - energie_predmet.svet_x) < 10:
+                    je_blizko = True
+                    break
+
+            if not je_blizko:
+                mince_predmety.add(Mince(posledni_mince, fyzika.generace_bod(posledni_mince)-random.randint(100,250)))
+
+        for mince in mince_predmety.copy():
+            mince.vykresli(screen, camera.x, camera.y)
+            if abs(mince.svet_x - kolo.rear_axel.position.x) < 400:
+                mince_mask = mince.get_mask()
+                mince_pos = (int(mince.svet_x - camera.x), int(mince.svet_y - camera.y))
+                kolo_masky = [(maska_kola, kolo_pos), (rafek_mask_rear, rafek_pos_rear),(rafek_mask_front, rafek_pos_front)]
+                for mask, pos in kolo_masky:
+                    offset = (mince_pos[0] - pos[0], mince_pos[1] - pos[1])
+                    if mask.overlap(mince_mask, offset):
+                        prachy += 1
+                        mince_predmety.remove(mince)
 
         for predmet in energie_predmety.copy():
             predmet.vykresli(screen, camera.x, camera.y)
@@ -325,6 +389,7 @@ def main(kolo):
                     offset = (predmet_pos[0] - pos[0], predmet_pos[1] - pos[1])
                     if mask.overlap(predmet_mask, offset):
                         kolo.energie = min(kolo.energie + predmet.pridavek_energie, 100)
+                        print(f"+ {predmet.pridavek_energie} energie")
                         energie_predmety.remove(predmet)
                         break
 
@@ -332,17 +397,19 @@ def main(kolo):
             kolikaty_banan += 1
             vzdalenost_predmetu += rust_vzdalenosti * kolikaty_banan
             nova_predmet_x = kolo.rear_axel.get_position().x + vzdalenost_predmetu
-            energie_predmety.add(EnergetickyPredmet(nova_predmet_x, fyzika.generace_bod(nova_predmet_x) - 150, banan_img, banan_energie))
+            energie_predmety.add(EnergetickyPredmet(nova_predmet_x, fyzika.generace_bod(nova_predmet_x) - 150, jidlo_img, jidlo_energie))
 
         km_ujet = kolo.rear_axel.get_position().x
 
-        #kolo.energie -= ztrata_energie
+        kolo.energie -= ztrata_energie
         if kolo.energie < -10:
             energie_predmety.empty()
             main()
 
         rychlost = kolo.rear_wheel.get_speed().x
         vykresli_ui(screen, km_ujet, kolo.energie, kolo.rear_axel.get_position().x, rychlost, pygame.time.get_ticks() - start_cas)
+
+        vykresli_text(screen, f"Money: {prachy}", (255, 215, 0), (22, 360), velikost=50)
 
         fps = clock.get_fps()
         vykresli_text(screen, f"FPS: {int(fps)}", (0, 0, 0), (20, 150), velikost=100)
