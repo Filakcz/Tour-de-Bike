@@ -404,7 +404,7 @@ def main(kolo, vybrane_jidlo):
         kolo.energie -= ztrata_energie
         if kolo.energie < -10:
             energie_predmety.empty()
-            main()
+            bezi = False
 
         rychlost = kolo.rear_wheel.get_speed().x
         vykresli_ui(screen, km_ujet, kolo.energie, kolo.rear_axel.get_position().x, rychlost, pygame.time.get_ticks() - start_cas)
