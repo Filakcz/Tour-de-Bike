@@ -1,6 +1,7 @@
 import pygame
 from hra import main as spust_hru
 from hra import vykresli_text as vykresli_text
+from hra import vykresli_tlacitko as vykresli_tlacitko
 from fyzika import nastav_kolo
 
 pygame.init()
@@ -105,10 +106,8 @@ def menu_vylepseni():
 
         upgrade1 = pygame.Rect(100, 600, 600, 100)
         upgrade2 = pygame.Rect(100, 750, 600, 100)
-        pygame.draw.rect(screen, (180, 180, 255), upgrade1)
-        pygame.draw.rect(screen, (180, 255, 180), upgrade2)
-        vykresli_text(screen, "+ SPEED (nefugnuje)", (0, 0, 0), (120, 620))
-        vykresli_text(screen, "+ BETTER ENDURANCE (nefugnuje)", (0, 0, 0), (120, 780))
+        vykresli_tlacitko(screen, "+ SPEED (nefugnuje)", upgrade1, barva_pozadi=(180, 180, 255), barva_textu=(0,0,0))
+        vykresli_tlacitko(screen, "+ ENDURANCE (nefugnuje)", upgrade2, barva_pozadi=(180, 255, 180), barva_textu=(0,0,0))
 
         jidlo_rects = [
             pygame.Rect(800, 550, 200, 100),  # banan
@@ -116,28 +115,21 @@ def menu_vylepseni():
             pygame.Rect(800, 850, 200, 100),  # kure
         ]
         jidla = ["Banana", "Protein bar", "Chicken"]
+        barvy = [(255, 255, 180), (220, 255, 220), (255, 220, 220)]
 
-        color = (255, 255, 180)
-        pygame.draw.rect(screen, color, jidlo_rects[0])
-        if vybrane_jidlo == 0:
-            pygame.draw.rect(screen, (0, 0, 255), jidlo_rects[0], 5)
-        vykresli_text(screen, jidla[0], (0, 0, 0), (jidlo_rects[0].x + 20, jidlo_rects[0].y + 30))
-
-        color = (220, 255, 220)
-        pygame.draw.rect(screen, color, jidlo_rects[1])
-        if vybrane_jidlo == 1:
-            pygame.draw.rect(screen, (0, 0, 255), jidlo_rects[1], 5)
-        vykresli_text(screen, jidla[1], (0, 0, 0), (jidlo_rects[1].x + 20, jidlo_rects[1].y + 30))
-
-        color = (255, 220, 220)
-        pygame.draw.rect(screen, color, jidlo_rects[2])
-        if vybrane_jidlo == 2:
-            pygame.draw.rect(screen, (0, 0, 255), jidlo_rects[2], 5)
-        vykresli_text(screen, jidla[2], (0, 0, 0), (jidlo_rects[2].x + 20, jidlo_rects[2].y + 30))
+        for i in range(3):
+            vykresli_tlacitko(
+                screen,
+                jidla[i],
+                jidlo_rects[i],
+                barva_pozadi=barvy[i],
+                barva_textu=(0,0,0),
+                barva_okraje=(0,0,255) if vybrane_jidlo == i else (0,0,0),
+                tloustka_okraje=5 if vybrane_jidlo == i else 2
+            )
 
         tlacitko_zpet = pygame.Rect(50, 900, 200, 100)
-        pygame.draw.rect(screen, (255, 100, 100), tlacitko_zpet)
-        vykresli_text(screen, "Zpět", (0, 0, 0), (90, 930))
+        vykresli_tlacitko(screen, "Back", tlacitko_zpet, barva_pozadi=(255, 100, 100), barva_textu=(0,0,0))
 
         pygame.display.flip()
         for event in pygame.event.get():
@@ -157,6 +149,9 @@ def menu_vylepseni():
                     vybrane_jidlo = 1
                 elif jidlo_rects[2].collidepoint(event.pos):
                     vybrane_jidlo = 2
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    bezi = False
 
 def menu_nastaveni():
     bezi = True
@@ -165,11 +160,14 @@ def menu_nastaveni():
         vykresli_text(screen, "Settings", (0, 0, 0), (100, 100))
 
         vykresli_text(screen, "Volume: ", (0, 0, 0), (120, 250))
-        vykresli_text(screen, "Potato PC:", (0, 0, 0), (120, 350))
+        vykresli_text(screen, "Potato PC (disables stones and clouds):", (0, 0, 0), (120, 325))
+        vykresli_text(screen, "Credits:", (0, 0, 0), (120, 650))
+        vykresli_text(screen, "Ondra - physics, antialiasing", (0, 0, 0), (120, 725))
+        vykresli_text(screen, "Rosta - bug fix stones", (0, 0, 0), (120, 800))
+        
 
         tlacitko_zpet = pygame.Rect(50, 900, 200, 100)
-        pygame.draw.rect(screen, (255, 100, 100), tlacitko_zpet)
-        vykresli_text(screen, "Back", (0, 0, 0), (90, 930))
+        vykresli_tlacitko(screen, "Back", tlacitko_zpet, barva_pozadi=(255, 100, 100), barva_textu=(0,0,0))
 
         pygame.display.flip()
         for event in pygame.event.get():
@@ -178,6 +176,9 @@ def menu_nastaveni():
                 quit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if tlacitko_zpet.collidepoint(event.pos):
+                    bezi = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
                     bezi = False
 
 menu()

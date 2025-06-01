@@ -43,7 +43,7 @@ def blit_rotate_bottom_left(surf, image, bottom_left_pos, angle):
 
     image_rect = image.get_rect()
     width, height = image_rect.size
-    offset_center_to_bl = pygame.math.Vector2(-width / 2, height / 2 - offset_y)  # upraveno zde
+    offset_center_to_bl = pygame.math.Vector2(-width / 2, height / 2 - offset_y)
     rotated_offset = offset_center_to_bl.rotate(-angle)
     rotated_center = (bottom_left_pos[0] - rotated_offset.x, bottom_left_pos[1] - rotated_offset.y)
     rotated_image = pygame.transform.rotozoom(image, angle, 1.0)
@@ -64,6 +64,15 @@ def vykresli_text(surf, text, barva, pozice, zarovnat="left", velikost=50, font=
     elif zarovnat == "right":
         text_rect.topright = pozice
     surf.blit(text_surface, text_rect)
+
+def vykresli_tlacitko(surface, text, rect, barva_textu=(255,255,255), barva_pozadi=(0, 70, 140), barva_okraje=(0,0,0), tloustka_okraje=2, velikost_pisma=50, font="Arial"):
+    pygame.draw.rect(surface, barva_pozadi, rect)
+
+    pygame.draw.rect(surface, barva_okraje, rect, tloustka_okraje)
+
+    vykresli_text(surface, text, barva_textu, rect.center, "center", velikost_pisma, font)
+
+
 
 class EnergetickyPredmet(pygame.sprite.Sprite):
     def __init__(self, x, y, obrazek, pridavek_energie):
@@ -101,7 +110,7 @@ class Mince(pygame.sprite.Sprite):
         return int(self.svet_x), int(self.svet_y)
 
 def vykresli_ui(screen, km, energie, kolo_x, rychlost, cas):
-    vykresli_text(screen, f"Ujeto: {round(km/1000,1)} km", (0, 0, 0), (22, 20))
+    vykresli_text(screen, f"Distance: {round(km/1000,1)} km", (0, 0, 0), (22, 20))
 
     pygame.draw.rect(screen, (50, 50, 50), (20, 90, 250, 40))
     if energie > 0:
@@ -144,7 +153,7 @@ def vykresli_ui(screen, km, energie, kolo_x, rychlost, cas):
 
         if nejblizsi:
             vzdalenost = nejblizsi.svet_x - kolo_x
-            vykresli_text(screen, f"{round(vzdalenost/1000,1)} km →", (0, 0, 0), (obrazovka_sirka - 20, 20), zarovnat="right")
+            vykresli_text(screen, f"{round(vzdalenost/1000,1)} km →", (0, 0, 0), (obrazovka_sirka - 20, 200), zarovnat="right")
 
 def vykresli_teren(screen, kamera_x, kamera_y, kaminky):
     smazat_kaminky = []
@@ -210,10 +219,8 @@ def vykresli_teren(screen, kamera_x, kamera_y, kaminky):
 
     pygame.draw.lines(screen, (0, 0, 0), False, body_hrana, 2)
 
-
-
 def vykresli_kolo(kolo, camera, rafek_img, kolo_img):
-    global rafek_mask_front, rafek_mask_rear, rafek_pos_front, rafek_pos_rear
+    global rafek_mask_front, rafek_mask_rear, rafek_pos_front, rafek_pos_rear, uhel
     rafek_rear_rot = pygame.transform.rotozoom(rafek_img, (kolo.rear_wheel.get_position().x / (WHEEL_RADIUS)) * (-180 / math.pi), 1.0)
     rafek_mask_rear = pygame.mask.from_surface(rafek_rear_rot)
     rafek_front_rot = pygame.transform.rotozoom(rafek_img, (kolo.front_wheel.get_position().x / (WHEEL_RADIUS)) * (-180 / math.pi), 1.0)
@@ -228,7 +235,8 @@ def vykresli_kolo(kolo, camera, rafek_img, kolo_img):
     screen.blit(rafek_front_rot, rafek_rect_front.topleft)
 
     center = kolo.rear_axel.position
-    blit_rotate_bottom_left(screen, kolo_img, (int(center.x - camera.x), int(center.y - camera.y)), (-180 / math.pi) * math.atan2(kolo.front_axel.position.y - kolo.rear_axel.position.y, kolo.front_axel.position.x - kolo.rear_axel.position.x))
+    uhel = (-180 / math.pi) * math.atan2(kolo.front_axel.position.y - kolo.rear_axel.position.y, kolo.front_axel.position.x - kolo.rear_axel.position.x)
+    blit_rotate_bottom_left(screen, kolo_img, (int(center.x - camera.x), int(center.y - camera.y)), uhel)
 
 def vykresli_mraky(screen, kamera_x, kamera_y, mraky):
     for m in mraky:
@@ -242,6 +250,71 @@ def vykresli_mraky(screen, kamera_x, kamera_y, mraky):
             m["x"] -= obrazovka_sirka * 2 + img.get_width()
             x = int(m["x"] - kamera_x * m["parallax"])
         screen.blit(img, (x, y))
+
+def pause_menu(screen):
+    paused = True
+    posledni_snimek = screen.copy()
+    pokracovat_rect = pygame.Rect(screen.get_width()//2 - 200, 400, 400, 100)
+    restart_rect = pygame.Rect(screen.get_width()//2 - 200, 550, 400, 100)
+    menu_rect = pygame.Rect(screen.get_width()//2 - 200, 700, 400, 100)
+    while paused:
+        screen.blit(posledni_snimek, (0, 0))
+        pruhledna_cerna = pygame.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
+        pruhledna_cerna.fill((0, 0, 0, 140))
+        screen.blit(pruhledna_cerna, (0, 0))
+        vykresli_text(screen, "Paused", (255, 255, 255), (screen.get_width()//2, 250), "center", 200)
+
+        vykresli_tlacitko(screen, "Continue", pokracovat_rect)
+        vykresli_tlacitko(screen, "Restart", restart_rect)
+        vykresli_tlacitko(screen, "Back to menu", menu_rect)
+
+        pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return "pokracovat"
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if pokracovat_rect.collidepoint(event.pos):
+                    return "pokracovat"
+                elif restart_rect.collidepoint(event.pos):
+                    return "restart"
+                elif menu_rect.collidepoint(event.pos):
+                    return "menu"
+
+def konec_menu(screen, prachy, km_ujet):
+    konec = True
+    posledni_snimek = screen.copy()
+    restart_rect = pygame.Rect(screen.get_width()//2 - 200, 550, 400, 100)
+    menu_rect = pygame.Rect(screen.get_width()//2 - 200, 700, 400, 100)
+    while konec:
+        screen.blit(posledni_snimek, (0,0))
+        pruhledna_cerna = pygame.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
+        pruhledna_cerna.fill((0, 0, 0, 140))
+        screen.blit(pruhledna_cerna, (0, 0))
+
+        vykresli_text(screen, "Game Over", (255, 80, 80), (screen.get_width()//2, 250), "center", 150)
+        vykresli_text(screen, f"Money: {prachy}", (255, 215, 0), (screen.get_width()//2, 400), "center", 70)
+        vykresli_text(screen, f"Distance: {round(km_ujet/1000, 2)} km", (255, 255, 255), (screen.get_width()//2, 480), "center", 60)
+
+        vykresli_tlacitko(screen, "Restart", restart_rect)
+        vykresli_tlacitko(screen, "Back to menu", menu_rect)
+
+        pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return "menu"
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if restart_rect.collidepoint(event.pos):
+                    return "restart"
+                elif menu_rect.collidepoint(event.pos):
+                    return "menu"
 
 banan_img = pygame.image.load("img/banan.png").convert_alpha()
 k = 70 / banan_img.get_width()
@@ -287,10 +360,9 @@ rust_vzdalenosti = 200
 # TODO: hudba, zvuk
 # TODO: credity - ondra = fyzika, antialiasing, rosta - bug fix kaminku
 
-
-def main(kolo, vybrane_jidlo):
+def main(kolo_typ, vybrane_jidlo):
     global prachy
-    ram_obrazky = nahrat_obrazky(kolo)
+    ram_obrazky = nahrat_obrazky(kolo_typ)
 
     mraky = []
     for vrstva in range(3):
@@ -312,7 +384,7 @@ def main(kolo, vybrane_jidlo):
     bezi = True
     clock = pygame.time.Clock()
     
-    kolo = Bike(Vector(obrazovka_sirka / 2, fyzika.generace_bod(obrazovka_sirka / 2)-200))
+    kolo = Bike(Vector(0, fyzika.generace_bod(0)-200))
 
     km_ujet = 0
     vzdalenost_predmetu = 1000
@@ -339,14 +411,23 @@ def main(kolo, vybrane_jidlo):
 
     camera = Vector(0, 0)
 
+    pause_tlacitko_polomer = 50
+    pause_tlacitko_center = (obrazovka_sirka - pause_tlacitko_polomer - 30, pause_tlacitko_polomer + 30)
+    pause_tlacitko_rect = pygame.Rect(
+        pause_tlacitko_center[0] - pause_tlacitko_polomer,
+        pause_tlacitko_center[1] - pause_tlacitko_polomer,
+        pause_tlacitko_polomer * 2,
+        pause_tlacitko_polomer * 2
+    )
+
+    hlava_sirka = 152 * pomer
+    hlava_vyska = 153 * pomer
+    offset_x = 373 * pomer
+    offset_y = -573 * pomer
+
     while bezi:
         screen.blit(obloha_img, (0, 0))
         vykresli_mraky(screen, camera.x, camera.y, mraky)
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                quit()
 
         kolo.tick()
         vykresli_kolo(kolo, camera, rafek_img, ram_obrazky[int(kolo.animace_index)])
@@ -389,7 +470,6 @@ def main(kolo, vybrane_jidlo):
                     offset = (predmet_pos[0] - pos[0], predmet_pos[1] - pos[1])
                     if mask.overlap(predmet_mask, offset):
                         kolo.energie = min(kolo.energie + predmet.pridavek_energie, 100)
-                        print(f"+ {predmet.pridavek_energie} energie")
                         energie_predmety.remove(predmet)
                         break
 
@@ -404,15 +484,58 @@ def main(kolo, vybrane_jidlo):
         kolo.energie -= ztrata_energie
         if kolo.energie < -10:
             energie_predmety.empty()
-            bezi = False
+            while True:
+                akce = konec_menu(screen, prachy, km_ujet)
+                if akce == "restart":
+                    main(kolo_typ, vybrane_jidlo)
+                    return
+                elif akce == "menu":
+                    return
 
         rychlost = kolo.rear_wheel.get_speed().x
         vykresli_ui(screen, km_ujet, kolo.energie, kolo.rear_axel.get_position().x, rychlost, pygame.time.get_ticks() - start_cas)
 
         vykresli_text(screen, f"Money: {prachy}", (255, 215, 0), (22, 360), velikost=50)
 
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    akce = pause_menu(screen)
+                    if akce == "pokracovat":
+                        continue
+                    elif akce == "restart":
+                        main(kolo_typ, vybrane_jidlo)
+                        return
+                    elif akce == "menu":
+                        bezi = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if pause_tlacitko_rect.collidepoint(event.pos):
+                    akce = pause_menu(screen)
+                    if akce == "pokracovat":
+                        continue
+                    elif akce == "restart":
+                        main(kolo_typ, vybrane_jidlo)
+                        return
+                    elif akce == "menu":
+                        bezi = False
+
         fps = clock.get_fps()
         vykresli_text(screen, f"FPS: {int(fps)}", (0, 0, 0), (20, 150), velikost=100)
+
+        pygame.draw.circle(screen, (255, 255, 255), pause_tlacitko_center, pause_tlacitko_polomer)
+        pygame.draw.circle(screen, (0, 0, 0), pause_tlacitko_center, pause_tlacitko_polomer, 4)
+        cara_sirka = 12
+        cara_vyska = 50
+        cara_mezera = 16
+        cara_barva = (0,0,0)
+        x1 = pause_tlacitko_center[0] - cara_mezera // 2 - cara_sirka
+        x2 = pause_tlacitko_center[0] + cara_mezera // 2
+        y = pause_tlacitko_center[1] - cara_vyska // 2
+        pygame.draw.rect(screen, cara_barva, (x1, y, cara_sirka, cara_vyska), border_radius=6)
+        pygame.draw.rect(screen, cara_barva, (x2, y, cara_sirka, cara_vyska), border_radius=6)
 
         pygame.display.flip()
         clock.tick(60)
