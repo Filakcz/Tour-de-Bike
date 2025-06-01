@@ -2,6 +2,7 @@ import pygame
 import pygame.gfxdraw
 import math
 import random
+#import time
 from fyzika import Vector, Bike, BIKE_LENGTH, WHEEL_RADIUS
 
 pygame.init()
@@ -14,12 +15,16 @@ obrazovka_vyska = 1080
 screen = pygame.display.set_mode((obrazovka_sirka, obrazovka_vyska))
 pygame.display.set_caption("Tour de Bike")
 
-barva_nebe = (135, 206, 235)
 barva_trava = (0, 154, 23)
+vyska_travy = 50
+barva_hlina = (120, 72, 0)
+barva_kamen = (80, 60, 40)
 
 fyzika.krok = 10
 fyzika.obtiznost_mapy = 10000 # nizsi cislo = tezsi
 fyzika.obrazovka_vyska = obrazovka_vyska
+
+FONTY = {}
 
 def nahrat_obrazky(kolo):
     global pomer
@@ -53,8 +58,14 @@ def blit_rotate_bottom_left(surf, image, bottom_left_pos, angle):
 
     surf.blit(rotated_image, new_rect.topleft)
 
+def get_font(velikost, font):
+    klic = (velikost, font)
+    if klic not in FONTY:
+        FONTY[klic] = pygame.font.SysFont(font, velikost)
+    return FONTY[klic]
+
 def vykresli_text(surf, text, barva, pozice, zarovnat="left", velikost=50, font="Arial"):
-    font = pygame.font.SysFont(font, velikost)
+    font = get_font(velikost,font)
     text_surface = font.render(text, True, barva)
     text_rect = text_surface.get_rect()
     if zarovnat == "left":
@@ -71,8 +82,6 @@ def vykresli_tlacitko(surface, text, rect, barva_textu=(255,255,255), barva_poza
     pygame.draw.rect(surface, barva_okraje, rect, tloustka_okraje)
 
     vykresli_text(surface, text, barva_textu, rect.center, "center", velikost_pisma, font)
-
-
 
 class EnergetickyPredmet(pygame.sprite.Sprite):
     def __init__(self, x, y, obrazek, pridavek_energie):
@@ -161,10 +170,7 @@ def vykresli_teren(screen, kamera_x, kamera_y, kaminky):
         if x < kamera_x - 2 * obrazovka_sirka or x > kamera_x + obrazovka_sirka + 2 * obrazovka_sirka:
             smazat_kaminky.append(x)
     for x in smazat_kaminky:
-        del kaminky[x]
-    vyska_travy = 50
-    barva_hlina = (120, 72, 0)
-    barva_kamen = (80, 60, 40)
+        del kaminky[x] 
 
     body_trava = [[0, obrazovka_vyska]]
     body_hlina = [[0, obrazovka_vyska+ vyska_travy]]
@@ -438,6 +444,8 @@ def main(kolo_typ, vybrane_jidlo):
     offset_x = 390 * pomer
     offset_y = -570 * pomer
 
+    # casy = []
+
     while bezi:
         screen.blit(obloha_img, (0, 0))
         vykresli_mraky(screen, camera.x, camera.y, mraky)
@@ -453,12 +461,14 @@ def main(kolo_typ, vybrane_jidlo):
 
             je_blizko = False
             for energie_predmet in energie_predmety.copy():
-                if abs(posledni_mince - energie_predmet.svet_x) < 10:
+                if abs(posledni_mince - energie_predmet.svet_x) < 50:
                     je_blizko = True
                     break
 
             if not je_blizko:
                 mince_predmety.add(Mince(posledni_mince, fyzika.generace_bod(posledni_mince)-random.randint(100,250)))
+
+        # start = time.perf_counter()
 
         for mince in mince_predmety.copy():
             mince.vykresli(screen, camera.x, camera.y)
@@ -484,6 +494,22 @@ def main(kolo_typ, vybrane_jidlo):
                         kolo.energie = min(kolo.energie + predmet.pridavek_energie, 100)
                         energie_predmety.remove(predmet)
                         break
+
+        # mask - 0.13
+        # half - 0.16
+        # rect - 0.1
+        # end = time.perf_counter()
+        # detekce_time = (end - start) * 1000
+
+        # casy.append(detekce_time)
+        # if len(casy) > 300: 
+        #     casy.pop(0)
+
+        # prumer = sum(casy) / len(casy)
+        # maximum = max(casy)
+
+        # vykresli_text(screen, f"Průměr: {prumer:.2f} ms", (255, 0, 0), (20, 300), velikost=40)
+        # vykresli_text(screen, f"Maximum: {maximum:.2f} ms", (255, 0, 0), (20, 350), velikost=40)
 
         if kolo.rear_axel.get_position().x > vzdalenost_predmetu:
             kolikaty_banan += 1
@@ -513,8 +539,8 @@ def main(kolo_typ, vybrane_jidlo):
             rotace_bodu((vrchni_levy_roh_x + hlava_sirka, vrchni_levy_roh_y + hlava_vyska), (kolo.rear_axel.position.x, kolo.rear_axel.position.y), -uhel),
             rotace_bodu((vrchni_levy_roh_x, vrchni_levy_roh_y + hlava_vyska), (kolo.rear_axel.position.x, kolo.rear_axel.position.y), -uhel)
         ]
-        hitbox_body = [((x - camera.x), (y - camera.y)) for x, y in rohy]
-        pygame.draw.polygon(screen, (255, 0, 0), hitbox_body, 2)
+        #hitbox_body = [((x - camera.x), (y - camera.y)) for x, y in rohy]
+        #pygame.draw.polygon(screen, (255, 0, 0), hitbox_body, 2)
         kolize = False
         krok = 10
         for i in range(4):

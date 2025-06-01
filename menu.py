@@ -182,3 +182,15 @@ def menu_nastaveni():
                     bezi = False
 
 menu()
+
+# if __name__ == "__main__":
+#     import cProfile
+#     import pstats
+
+#     profiler = cProfile.Profile()
+#     profiler.enable()
+#     menu()
+#     profiler.disable()
+#     stats = pstats.Stats(profiler).sort_stats('cumtime')
+#     stats.print_stats(30)
+#     pygame.quit()
