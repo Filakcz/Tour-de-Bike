@@ -287,17 +287,17 @@ def pause_menu(screen):
 def konec_menu(screen, prachy, km_ujet):
     konec = True
     posledni_snimek = screen.copy()
-    restart_rect = pygame.Rect(screen.get_width()//2 - 200, 550, 400, 100)
-    menu_rect = pygame.Rect(screen.get_width()//2 - 200, 700, 400, 100)
+    restart_rect = pygame.Rect(screen.get_width()//4 - 200, 550, 400, 100)
+    menu_rect = pygame.Rect(screen.get_width()//4 - 200, 700, 400, 100)
     while konec:
         screen.blit(posledni_snimek, (0,0))
         pruhledna_cerna = pygame.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
         pruhledna_cerna.fill((0, 0, 0, 140))
         screen.blit(pruhledna_cerna, (0, 0))
 
-        vykresli_text(screen, "Game Over", (255, 80, 80), (screen.get_width()//2, 250), "center", 150)
-        vykresli_text(screen, f"Money: {prachy}", (255, 215, 0), (screen.get_width()//2, 400), "center", 70)
-        vykresli_text(screen, f"Distance: {round(km_ujet/1000, 2)} km", (255, 255, 255), (screen.get_width()//2, 480), "center", 60)
+        vykresli_text(screen, "Game Over", (255, 80, 80), (screen.get_width()//4, 250), "center", 150)
+        vykresli_text(screen, f"Money: {prachy}", (255, 215, 0), (screen.get_width()//4, 400), "center", 70)
+        vykresli_text(screen, f"Distance: {round(km_ujet/1000, 2)} km", (255, 255, 255), (screen.get_width()//4, 480), "center", 60)
 
         vykresli_tlacitko(screen, "Restart", restart_rect)
         vykresli_tlacitko(screen, "Back to menu", menu_rect)
@@ -360,6 +360,19 @@ rust_vzdalenosti = 200
 # TODO: hudba, zvuk
 # TODO: credity - ondra = fyzika, antialiasing, rosta - bug fix kaminku
 
+def rotace_bodu(bod, pivot, uhel_stupne):
+    uhel_rad = math.radians(uhel_stupne)
+    x, y = bod
+    piv_x, piv_y = pivot
+
+    dx = x - piv_x
+    dy = y - piv_y
+
+    x_rot = dx * math.cos(uhel_rad) - dy * math.sin(uhel_rad)
+    y_rot = dx * math.sin(uhel_rad) + dy * math.cos(uhel_rad)
+
+    return (x_rot + piv_x, y_rot + piv_y)
+
 def main(kolo_typ, vybrane_jidlo):
     global prachy
     ram_obrazky = nahrat_obrazky(kolo_typ)
@@ -420,10 +433,10 @@ def main(kolo_typ, vybrane_jidlo):
         pause_tlacitko_polomer * 2
     )
 
-    hlava_sirka = 152 * pomer
-    hlava_vyska = 153 * pomer
-    offset_x = 373 * pomer
-    offset_y = -573 * pomer
+    hlava_sirka = 140 * pomer
+    hlava_vyska = 140 * pomer
+    offset_x = 390 * pomer
+    offset_y = -570 * pomer
 
     while bezi:
         screen.blit(obloha_img, (0, 0))
@@ -431,8 +444,7 @@ def main(kolo_typ, vybrane_jidlo):
 
         kolo.tick()
         vykresli_kolo(kolo, camera, rafek_img, ram_obrazky[int(kolo.animace_index)])
-        camera = fyzika.lerp(camera, kolo.rear_axel.position - Vector(-BIKE_LENGTH / 2 + obrazovka_sirka/2, obrazovka_vyska/1.5), 0.1)
-
+        
         vykresli_teren(screen, camera.x, camera.y, kaminky)
 
         while kolo.rear_axel.position.x + obrazovka_sirka >= posledni_mince + vzadelnost_minci:
@@ -492,6 +504,43 @@ def main(kolo_typ, vybrane_jidlo):
                 elif akce == "menu":
                     return
 
+        vrchni_levy_roh_x = kolo.rear_axel.position.x + offset_x
+        vrchni_levy_roh_y = kolo.rear_axel.position.y + offset_y
+        
+        rohy = [
+            rotace_bodu((vrchni_levy_roh_x, vrchni_levy_roh_y), (kolo.rear_axel.position.x, kolo.rear_axel.position.y), -uhel),
+            rotace_bodu((vrchni_levy_roh_x + hlava_sirka, vrchni_levy_roh_y), (kolo.rear_axel.position.x, kolo.rear_axel.position.y), -uhel),
+            rotace_bodu((vrchni_levy_roh_x + hlava_sirka, vrchni_levy_roh_y + hlava_vyska), (kolo.rear_axel.position.x, kolo.rear_axel.position.y), -uhel),
+            rotace_bodu((vrchni_levy_roh_x, vrchni_levy_roh_y + hlava_vyska), (kolo.rear_axel.position.x, kolo.rear_axel.position.y), -uhel)
+        ]
+        hitbox_body = [((x - camera.x), (y - camera.y)) for x, y in rohy]
+        pygame.draw.polygon(screen, (255, 0, 0), hitbox_body, 2)
+        kolize = False
+        krok = 10
+        for i in range(4):
+            x1, y1 = rohy[i]
+            x2, y2 = rohy[(i+1)%4]
+            for s in range(krok + 1):
+                t = s / krok
+                x = x1 + (x2 - x1) * t
+                y = y1 + (y2 - y1) * t
+                vyska_terenu = fyzika.generace_bod(x)
+                if y > vyska_terenu:
+                    kolize = True
+                    break
+            if kolize:
+                break
+
+        if kolize:
+            energie_predmety.empty()
+            while True:
+                akce = konec_menu(screen, prachy, km_ujet)
+                if akce == "restart": 
+                    main(kolo_typ, vybrane_jidlo)
+                    return
+                elif akce == "menu":
+                    return
+
         rychlost = kolo.rear_wheel.get_speed().x
         vykresli_ui(screen, km_ujet, kolo.energie, kolo.rear_axel.get_position().x, rychlost, pygame.time.get_ticks() - start_cas)
 
@@ -537,6 +586,7 @@ def main(kolo_typ, vybrane_jidlo):
         pygame.draw.rect(screen, cara_barva, (x1, y, cara_sirka, cara_vyska), border_radius=6)
         pygame.draw.rect(screen, cara_barva, (x2, y, cara_sirka, cara_vyska), border_radius=6)
 
+        camera = fyzika.lerp(camera, kolo.rear_axel.position - Vector(-BIKE_LENGTH / 2 + obrazovka_sirka/2, obrazovka_vyska/1.5), 0.1)
         pygame.display.flip()
         clock.tick(60)
 
