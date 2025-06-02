@@ -2,27 +2,20 @@ import pygame
 import pygame.gfxdraw
 import math
 import random
-#import time
-from fyzika import Vector, Bike, BIKE_LENGTH, WHEEL_RADIUS
+import config
+from fyzika import Vector, Bike
 
 pygame.init()
 
 import fyzika
-fyzika.GRAVITY = Vector(0, 0.2)
 
-obrazovka_sirka = 1920
-obrazovka_vyska = 1080
-screen = pygame.display.set_mode((obrazovka_sirka, obrazovka_vyska))
+screen = pygame.display.set_mode((config.obrazovka_sirka, config.obrazovka_vyska))
 pygame.display.set_caption("Tour de Bike")
 
 barva_trava = (0, 154, 23)
 vyska_travy = 50
 barva_hlina = (120, 72, 0)
 barva_kamen = (80, 60, 40)
-
-fyzika.krok = 10
-fyzika.obtiznost_mapy = 10000 # nizsi cislo = tezsi
-fyzika.obrazovka_vyska = obrazovka_vyska
 
 FONTY = {}
 
@@ -37,7 +30,7 @@ def nahrat_obrazky(kolo):
             img = pygame.image.load(f"img/{kolo}/kolo00{i}.png").convert_alpha()
         img_sirka = img.get_width()
         img_vyska = img.get_height()
-        pomer = BIKE_LENGTH / img_sirka
+        pomer = config.BIKE_LENGTH / img_sirka
         img = pygame.transform.smoothscale(img, (img_sirka * pomer, img_vyska * pomer))
         obrazky.append(img)
     return obrazky
@@ -162,74 +155,76 @@ def vykresli_ui(screen, km, energie, kolo_x, rychlost, cas):
 
         if nejblizsi:
             vzdalenost = nejblizsi.svet_x - kolo_x
-            vykresli_text(screen, f"{round(vzdalenost/1000,1)} km →", (0, 0, 0), (obrazovka_sirka - 20, 200), zarovnat="right")
+            vykresli_text(screen, f"{round(vzdalenost/1000,1)} km →", (0, 0, 0), (config.obrazovka_sirka - 20, 200), zarovnat="right")
 
 def vykresli_teren(screen, kamera_x, kamera_y, kaminky):
-    smazat_kaminky = []
-    for x in kaminky:
-        if x < kamera_x - 2 * obrazovka_sirka or x > kamera_x + obrazovka_sirka + 2 * obrazovka_sirka:
-            smazat_kaminky.append(x)
-    for x in smazat_kaminky:
-        del kaminky[x] 
-
-    body_trava = [[0, obrazovka_vyska]]
-    body_hlina = [[0, obrazovka_vyska+ vyska_travy]]
+    
+    body_trava = [[0, config.obrazovka_vyska]]
+    body_hlina = [[0, config.obrazovka_vyska + vyska_travy]]
     body_hrana = []
-    x_svet = kamera_x - (kamera_x % fyzika.krok)
 
-    x = x_svet
-    while True:
-        x_obrazovka = x - kamera_x - fyzika.krok
-        if x_obrazovka > obrazovka_sirka + fyzika.krok:
-            break
+    x_svet = kamera_x - (kamera_x % config.krok)
+    x = int(x_svet)
+
+    klice_na_smazani = []
+
+    while x < kamera_x + config.obrazovka_sirka + 2 * config.krok:
+        x_obrazovka = x - kamera_x
+
+        if not(config.potato_pc) and (x < kamera_x - 2 * config.obrazovka_sirka or x > kamera_x + 2 * config.obrazovka_sirka):
+            klice_na_smazani.append(x)
+
         y = fyzika.generace_bod(x) - kamera_y
         body_trava.append([x_obrazovka, y])
-        perp_vec = (Vector(body_trava[-1][0], body_trava[-1][1]) - Vector(body_trava[-2][0], body_trava[-2][1])).perpendicular()
-        if perp_vec.y < 0:
-            perp_vec.x *= -1
-            perp_vec.y *= -1
-        
-        hlina_vec = Vector(x_obrazovka, y) + perp_vec * vyska_travy
-        body_hlina.append([hlina_vec.x, hlina_vec.y])
-        body_hrana.append((x_obrazovka, y))
-        x += fyzika.krok
 
-    body_trava.append([obrazovka_sirka, fyzika.generace_bod(kamera_x + obrazovka_sirka + fyzika.krok) - kamera_y])
-    body_trava.append([obrazovka_sirka, obrazovka_vyska])
+        if len(body_trava) > 1:
+            perp_vec = (Vector(*body_trava[-1]) - Vector(*body_trava[-2])).perpendicular()
+            if perp_vec.y < 0:
+                perp_vec *= -1
+            hlina_vec = Vector(x_obrazovka, y) + perp_vec * vyska_travy
+            body_hlina.append([hlina_vec.x, hlina_vec.y])
+            body_hrana.append((x_obrazovka, y))
 
-    body_hlina.append([obrazovka_sirka, fyzika.generace_bod(kamera_x + obrazovka_sirka + fyzika.krok) + vyska_travy - kamera_y])
-    body_hlina.append([obrazovka_sirka, obrazovka_vyska])
+        if not(config.potato_pc) and kaminky is not None and x not in kaminky:
+            y_real = fyzika.generace_bod(x)
+            y_hlina = y_real + vyska_travy
+            segment_kaminky = [
+                (random.randint(x, x + config.krok),
+                 random.randint(int(y_hlina + 30), int(y_hlina + config.obrazovka_vyska + 30)),
+                 random.randint(1, 4))
+                for _ in range(10)
+            ]
+            kaminky[x] = segment_kaminky
+
+        x += config.krok
+
+    if not(config.potato_pc):
+        for klic in klice_na_smazani:
+            if klic in kaminky:
+                del kaminky[klic]
+
+    body_trava.append([config.obrazovka_sirka, fyzika.generace_bod(kamera_x + config.obrazovka_sirka + config.krok) - kamera_y])
+    body_trava.append([config.obrazovka_sirka, config.obrazovka_vyska])
+
+    body_hlina.append([config.obrazovka_sirka, fyzika.generace_bod(kamera_x + config.obrazovka_sirka + config.krok) + vyska_travy - kamera_y])
+    body_hlina.append([config.obrazovka_sirka, config.obrazovka_vyska])
 
     pygame.gfxdraw.filled_polygon(screen, body_trava, barva_trava)
     pygame.gfxdraw.filled_polygon(screen, body_hlina, barva_hlina)
 
-    x = int(x_svet)
-    while x < kamera_x + obrazovka_sirka + fyzika.krok:
-        if x not in kaminky:
-            y = fyzika.generace_bod(x)
-            y_hlina = y + vyska_travy
-            segment_kaminky = []
-            for _ in range(10):
-                kaminek_x = random.randint(x, x + fyzika.krok)
-                polomer = random.randint(1, 4)
-                kaminek_y = random.randint(int(y_hlina+30), int(y_hlina + obrazovka_vyska+30))
-                segment_kaminky.append((kaminek_x, kaminek_y, polomer))
-            kaminky[x] = segment_kaminky
-        x += fyzika.krok
-
-    for _, kaminky_segment in kaminky.items():
-        for kaminek_x, kaminek_y, polomer in kaminky_segment:
-            if kamera_x < kaminek_x < kamera_x + obrazovka_sirka and int(kaminek_y - kamera_y) < obrazovka_vyska:
-                pygame.draw.circle(screen, barva_kamen, (int(kaminek_x - kamera_x), int(kaminek_y - kamera_y)),polomer)
-
+    if not(config.potato_pc) and kaminky is not None:
+        for _, segment in kaminky.items():
+            for kx, ky, r in segment:
+                if kamera_x < kx < kamera_x + config.obrazovka_sirka and int(ky - kamera_y) < config.obrazovka_vyska:
+                    pygame.draw.circle(screen, barva_kamen, (int(kx - kamera_x), int(ky - kamera_y)), r)
 
     pygame.draw.lines(screen, (0, 0, 0), False, body_hrana, 2)
 
 def vykresli_kolo(kolo, camera, rafek_img, kolo_img):
     global rafek_mask_front, rafek_mask_rear, rafek_pos_front, rafek_pos_rear, uhel
-    rafek_rear_rot = pygame.transform.rotozoom(rafek_img, (kolo.rear_wheel.get_position().x / (WHEEL_RADIUS)) * (-180 / math.pi), 1.0)
+    rafek_rear_rot = pygame.transform.rotozoom(rafek_img, (kolo.rear_wheel.get_position().x / (config.WHEEL_RADIUS)) * (-180 / math.pi), 1.0)
     rafek_mask_rear = pygame.mask.from_surface(rafek_rear_rot)
-    rafek_front_rot = pygame.transform.rotozoom(rafek_img, (kolo.front_wheel.get_position().x / (WHEEL_RADIUS)) * (-180 / math.pi), 1.0)
+    rafek_front_rot = pygame.transform.rotozoom(rafek_img, (kolo.front_wheel.get_position().x / (config.WHEEL_RADIUS)) * (-180 / math.pi), 1.0)
     rafek_mask_front = pygame.mask.from_surface(rafek_front_rot)
 
     rafek_rect_rear = rafek_rear_rot.get_rect(center=(int(kolo.rear_wheel.position.x - camera.x), int(kolo.rear_wheel.position.y - camera.y)))
@@ -250,10 +245,10 @@ def vykresli_mraky(screen, kamera_x, kamera_y, mraky):
         y = int(m["y"] - kamera_y * m["parallax"])
         img = pygame.transform.smoothscale(mrak_img, (int(mrak_img.get_width() * m["velikost"]), int(mrak_img.get_height() * m["velikost"])))
         if x < -img.get_width():
-            m["x"] += obrazovka_sirka * 2 + img.get_width()
+            m["x"] += config.obrazovka_sirka * 2 + img.get_width()
             x = int(m["x"] - kamera_x * m["parallax"])
-        elif x > obrazovka_sirka + img.get_width():
-            m["x"] -= obrazovka_sirka * 2 + img.get_width()
+        elif x > config.obrazovka_sirka + img.get_width():
+            m["x"] -= config.obrazovka_sirka * 2 + img.get_width()
             x = int(m["x"] - kamera_x * m["parallax"])
         screen.blit(img, (x, y))
 
@@ -290,7 +285,7 @@ def pause_menu(screen):
                 elif menu_rect.collidepoint(event.pos):
                     return "menu"
 
-def konec_menu(screen, prachy, km_ujet):
+def konec_menu(screen, km_ujet):
     konec = True
     posledni_snimek = screen.copy()
     restart_rect = pygame.Rect(screen.get_width()//4 - 200, 550, 400, 100)
@@ -302,7 +297,7 @@ def konec_menu(screen, prachy, km_ujet):
         screen.blit(pruhledna_cerna, (0, 0))
 
         vykresli_text(screen, "Game Over", (255, 80, 80), (screen.get_width()//4, 250), "center", 150)
-        vykresli_text(screen, f"Money: {prachy}", (255, 215, 0), (screen.get_width()//4, 400), "center", 70)
+        vykresli_text(screen, f"Money: {config.prachy}", (255, 215, 0), (screen.get_width()//4, 400), "center", 70)
         vykresli_text(screen, f"Distance: {round(km_ujet/1000, 2)} km", (255, 255, 255), (screen.get_width()//4, 480), "center", 60)
 
         vykresli_tlacitko(screen, "Restart", restart_rect)
@@ -313,9 +308,6 @@ def konec_menu(screen, prachy, km_ujet):
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    return "menu"
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if restart_rect.collidepoint(event.pos):
                     return "restart"
@@ -345,26 +337,21 @@ mince_img = pygame.transform.smoothscale(mince_img, (int(mince_img.get_width() *
 
 mince_predmety = pygame.sprite.Group()
 vzadelnost_minci = 500
-prachy = 0
 
 rafek_img = pygame.image.load("img/rafek.png").convert_alpha()
-rafek_img = pygame.transform.smoothscale(rafek_img, (WHEEL_RADIUS * 2, WHEEL_RADIUS * 2))
+rafek_img = pygame.transform.smoothscale(rafek_img, (config.WHEEL_RADIUS * 2, config.WHEEL_RADIUS * 2))
 
 tachometr_img = pygame.image.load("img/tachometr.png").convert_alpha()
 tachometr_img = pygame.transform.smoothscale(tachometr_img, (400, 400))
 
-obloha_img = pygame.image.load("img/obloha.png").convert_alpha()
-obloha_img = pygame.transform.smoothscale(obloha_img, (obrazovka_sirka, obrazovka_vyska))
+obloha_img = pygame.image.load("img/obloha.png").convert()
+obloha_img = pygame.transform.smoothscale(obloha_img, (config.obrazovka_sirka, config.obrazovka_vyska))
 
 mrak_img = pygame.image.load("img/mrak.png").convert_alpha()
 mrak_img = pygame.transform.smoothscale(mrak_img, (mrak_img.get_width() // 2, mrak_img.get_height() // 2))
 
 ztrata_energie = 0.05
 rust_vzdalenosti = 200
-
-# TODO: main menu, nastaveni, ulozeni a nacteni hry, vylepseni kola, ruzne mapy
-# TODO: hudba, zvuk
-# TODO: credity - ondra = fyzika, antialiasing, rosta - bug fix kaminku
 
 def rotace_bodu(bod, pivot, uhel_stupne):
     uhel_rad = math.radians(uhel_stupne)
@@ -379,29 +366,34 @@ def rotace_bodu(bod, pivot, uhel_stupne):
 
     return (x_rot + piv_x, y_rot + piv_y)
 
-def main(kolo_typ, vybrane_jidlo):
-    global prachy
-    ram_obrazky = nahrat_obrazky(kolo_typ)
+def main():
+    ram_obrazky = nahrat_obrazky(config.vybrane_kolo)
 
     mraky = []
-    for vrstva in range(3):
-        parallax = 0.15 + 0.2 * vrstva
-        for i in range(2):
-            x = random.randint(0, obrazovka_sirka * 2)
-            y = vrstva * 10 - random.randint(70, 80)
-            velikost = 0.7 + 0.3 * random.random()
-            mraky.append({
-                "x": x,
-                "y": y,
-                "parallax": parallax,
-                "velikost": velikost,
-                "vrstva": vrstva
-            })
+    if not config.potato_pc:
+        for vrstva in range(3):
+            parallax = 0.15 + 0.2 * vrstva
+            for i in range(2):
+                x = random.randint(0, config.obrazovka_sirka * 2)
+                y = vrstva * 10 - random.randint(70, 80)
+                velikost = 0.7 + 0.3 * random.random()
+                mraky.append({
+                    "x": x,
+                    "y": y,
+                    "parallax": parallax,
+                    "velikost": velikost,
+                    "vrstva": vrstva
+                })
+
 
     kaminky = {}
+
+
     start_cas = pygame.time.get_ticks()
     bezi = True
+
     clock = pygame.time.Clock()
+    fps_tick = int(30 + config.fps_limit * 240)
     
     kolo = Bike(Vector(0, fyzika.generace_bod(0)-200))
 
@@ -409,16 +401,13 @@ def main(kolo_typ, vybrane_jidlo):
     vzdalenost_predmetu = 1000
     kolikaty_banan = 0
 
-    #energie_predmety.add(EnergetickyPredmet(1500, fyzika.generace_bod(1500)-190, tycinka_img, tycinka_energie))
-    #energie_predmety.add(EnergetickyPredmet(1400, fyzika.generace_bod(1400)-190, kure_img, kure_energie))
-
-    if vybrane_jidlo == 0:
+    if config.vybrane_jidlo == 0:
         jidlo_img = banan_img
         jidlo_energie = banan_energie
-    elif vybrane_jidlo == 1:
+    elif config.vybrane_jidlo == 1:
         jidlo_img = tycinka_img
         jidlo_energie = tycinka_energie
-    elif vybrane_jidlo == 2:
+    elif config.vybrane_jidlo == 2:
         jidlo_img = kure_img
         jidlo_energie = kure_energie
     else:
@@ -431,7 +420,7 @@ def main(kolo_typ, vybrane_jidlo):
     camera = Vector(0, 0)
 
     pause_tlacitko_polomer = 50
-    pause_tlacitko_center = (obrazovka_sirka - pause_tlacitko_polomer - 30, pause_tlacitko_polomer + 30)
+    pause_tlacitko_center = (config.obrazovka_sirka - pause_tlacitko_polomer - 30, pause_tlacitko_polomer + 30)
     pause_tlacitko_rect = pygame.Rect(
         pause_tlacitko_center[0] - pause_tlacitko_polomer,
         pause_tlacitko_center[1] - pause_tlacitko_polomer,
@@ -443,19 +432,21 @@ def main(kolo_typ, vybrane_jidlo):
     hlava_vyska = 140 * pomer
     offset_x = 390 * pomer
     offset_y = -570 * pomer
-
-    # casy = []
+    
+    energie_predmety.empty()
+    mince_predmety.empty()
 
     while bezi:
         screen.blit(obloha_img, (0, 0))
-        vykresli_mraky(screen, camera.x, camera.y, mraky)
+        if not config.potato_pc:
+            vykresli_mraky(screen, camera.x, camera.y, mraky)
 
         kolo.tick()
         vykresli_kolo(kolo, camera, rafek_img, ram_obrazky[int(kolo.animace_index)])
         
         vykresli_teren(screen, camera.x, camera.y, kaminky)
 
-        while kolo.rear_axel.position.x + obrazovka_sirka >= posledni_mince + vzadelnost_minci:
+        while kolo.rear_axel.position.x + config.obrazovka_sirka >= posledni_mince + vzadelnost_minci:
 
             posledni_mince += vzadelnost_minci
 
@@ -468,8 +459,6 @@ def main(kolo_typ, vybrane_jidlo):
             if not je_blizko:
                 mince_predmety.add(Mince(posledni_mince, fyzika.generace_bod(posledni_mince)-random.randint(100,250)))
 
-        # start = time.perf_counter()
-
         for mince in mince_predmety.copy():
             mince.vykresli(screen, camera.x, camera.y)
             if abs(mince.svet_x - kolo.rear_axel.position.x) < 400:
@@ -479,7 +468,7 @@ def main(kolo_typ, vybrane_jidlo):
                 for mask, pos in kolo_masky:
                     offset = (mince_pos[0] - pos[0], mince_pos[1] - pos[1])
                     if mask.overlap(mince_mask, offset):
-                        prachy += 1
+                        config.prachy += 1
                         mince_predmety.remove(mince)
 
         for predmet in energie_predmety.copy():
@@ -495,22 +484,6 @@ def main(kolo_typ, vybrane_jidlo):
                         energie_predmety.remove(predmet)
                         break
 
-        # mask - 0.13
-        # half - 0.16
-        # rect - 0.1
-        # end = time.perf_counter()
-        # detekce_time = (end - start) * 1000
-
-        # casy.append(detekce_time)
-        # if len(casy) > 300: 
-        #     casy.pop(0)
-
-        # prumer = sum(casy) / len(casy)
-        # maximum = max(casy)
-
-        # vykresli_text(screen, f"Průměr: {prumer:.2f} ms", (255, 0, 0), (20, 300), velikost=40)
-        # vykresli_text(screen, f"Maximum: {maximum:.2f} ms", (255, 0, 0), (20, 350), velikost=40)
-
         if kolo.rear_axel.get_position().x > vzdalenost_predmetu:
             kolikaty_banan += 1
             vzdalenost_predmetu += rust_vzdalenosti * kolikaty_banan
@@ -521,11 +494,10 @@ def main(kolo_typ, vybrane_jidlo):
 
         kolo.energie -= ztrata_energie
         if kolo.energie < -10:
-            energie_predmety.empty()
             while True:
-                akce = konec_menu(screen, prachy, km_ujet)
+                akce = konec_menu(screen, km_ujet)
                 if akce == "restart":
-                    main(kolo_typ, vybrane_jidlo)
+                    main()
                     return
                 elif akce == "menu":
                     return
@@ -539,8 +511,7 @@ def main(kolo_typ, vybrane_jidlo):
             rotace_bodu((vrchni_levy_roh_x + hlava_sirka, vrchni_levy_roh_y + hlava_vyska), (kolo.rear_axel.position.x, kolo.rear_axel.position.y), -uhel),
             rotace_bodu((vrchni_levy_roh_x, vrchni_levy_roh_y + hlava_vyska), (kolo.rear_axel.position.x, kolo.rear_axel.position.y), -uhel)
         ]
-        #hitbox_body = [((x - camera.x), (y - camera.y)) for x, y in rohy]
-        #pygame.draw.polygon(screen, (255, 0, 0), hitbox_body, 2)
+
         kolize = False
         krok = 10
         for i in range(4):
@@ -558,11 +529,10 @@ def main(kolo_typ, vybrane_jidlo):
                 break
 
         if kolize:
-            energie_predmety.empty()
             while True:
-                akce = konec_menu(screen, prachy, km_ujet)
+                akce = konec_menu(screen, km_ujet)
                 if akce == "restart": 
-                    main(kolo_typ, vybrane_jidlo)
+                    main()
                     return
                 elif akce == "menu":
                     return
@@ -570,7 +540,7 @@ def main(kolo_typ, vybrane_jidlo):
         rychlost = kolo.rear_wheel.get_speed().x
         vykresli_ui(screen, km_ujet, kolo.energie, kolo.rear_axel.get_position().x, rychlost, pygame.time.get_ticks() - start_cas)
 
-        vykresli_text(screen, f"Money: {prachy}", (255, 215, 0), (22, 360), velikost=50)
+        vykresli_text(screen, f"Money: {config.prachy}", (255, 215, 0), (22, 360), velikost=50)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -582,7 +552,7 @@ def main(kolo_typ, vybrane_jidlo):
                     if akce == "pokracovat":
                         continue
                     elif akce == "restart":
-                        main(kolo_typ, vybrane_jidlo)
+                        main()
                         return
                     elif akce == "menu":
                         bezi = False
@@ -592,15 +562,15 @@ def main(kolo_typ, vybrane_jidlo):
                     if akce == "pokracovat":
                         continue
                     elif akce == "restart":
-                        main(kolo_typ, vybrane_jidlo)
+                        main()
                         return
                     elif akce == "menu":
                         bezi = False
+        if config.fps:
+            fps = clock.get_fps()
+            vykresli_text(screen, f"FPS: {int(fps)}", (0, 0, 0), (20, 150), velikost=100)
 
-        fps = clock.get_fps()
-        vykresli_text(screen, f"FPS: {int(fps)}", (0, 0, 0), (20, 150), velikost=100)
-
-        pygame.draw.circle(screen, (255, 255, 255), pause_tlacitko_center, pause_tlacitko_polomer)
+        pygame.draw.circle(screen, (240, 240, 255), pause_tlacitko_center, pause_tlacitko_polomer)
         pygame.draw.circle(screen, (0, 0, 0), pause_tlacitko_center, pause_tlacitko_polomer, 4)
         cara_sirka = 12
         cara_vyska = 50
@@ -612,7 +582,7 @@ def main(kolo_typ, vybrane_jidlo):
         pygame.draw.rect(screen, cara_barva, (x1, y, cara_sirka, cara_vyska), border_radius=6)
         pygame.draw.rect(screen, cara_barva, (x2, y, cara_sirka, cara_vyska), border_radius=6)
 
-        camera = fyzika.lerp(camera, kolo.rear_axel.position - Vector(-BIKE_LENGTH / 2 + obrazovka_sirka/2, obrazovka_vyska/1.5), 0.1)
+        camera = fyzika.lerp(camera, kolo.rear_axel.position - Vector(-config.BIKE_LENGTH / 2 + config.obrazovka_sirka/2, config.obrazovka_vyska/1.5), 0.1)
         pygame.display.flip()
-        clock.tick(60)
+        clock.tick(fps_tick)
 
