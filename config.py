@@ -10,6 +10,7 @@ fullscreen = False
 vybrane_kolo = 0
 vybrane_jidlo = 0
 prachy = 0
+ztrata_energie = 0.05
 
 # odpruzeni
 SUS_FRONT = 0.5
@@ -26,6 +27,7 @@ BIKE_LENGTH = 120
 WHEEL_RADIUS = 40
 SLAPANI_FROCE = 1
 INAIR_FORCE = 0.2
+AIR_RESISTANCE = 0.005
 WHEEL_COLLISION_CHECK_SUBDIVISIONS = 50
 GRAVITY = (0, 0.2)
 

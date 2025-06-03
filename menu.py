@@ -1,5 +1,4 @@
 import pygame
-import time
 import config
 from hra import main as spust_hru
 from hra import vykresli_text as vykresli_text
@@ -38,7 +37,7 @@ margin_x = 50
 # ulozeni a nacteni hry
 # vylepseni kola - rychlost, mensi ztrata energie, 
 # kupovani kol a lepsich jidel
-# ruzne mapy (mesic, dalnice, hory)
+# ruzne mapy (mesic, dalnice, hory. noc)
 # hezci ui
 # hudba, zvuk
 # optimalizace
@@ -237,7 +236,7 @@ def menu_nastaveni():
                 vykresli_text(screen, zprava, (200, 0, 0), (config.obrazovka_sirka-margin_x,200), zarovnat="right", velikost=100)
             else:
                 vykresli_text(screen, zprava, (200, 0, 0), (config.obrazovka_sirka-margin_x,200), zarovnat="right")
-            if time.time() - zprava_cas > 2:
+            if (pygame.time.get_ticks() / 1000) - zprava_cas > 2:
                 zprava = ""
 
         tlacitko_reset = pygame.Rect(config.obrazovka_sirka - margin_x - 300, config.obrazovka_vyska - 120, 300, 80)
@@ -284,7 +283,8 @@ def menu_nastaveni():
                     pygame.display.set_mode((config.obrazovka_sirka, config.obrazovka_vyska))
                     secret_code = ""
                     zprava = "Settings reset successfully!"
-                    zprava_cas = time.time()
+                    zprava_cas = pygame.time.get_ticks() / 1000
+
 
                 elif kod_rect.collidepoint(event.pos):
                     zadavani_kodu = True
@@ -309,7 +309,8 @@ def menu_nastaveni():
                         else:
                             zprava = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
                         zadavani_kodu = False
-                        zprava_cas = time.time()
+                        zprava_cas = pygame.time.get_ticks() / 1000
+
 
                     elif event.key == pygame.K_BACKSPACE:
                         secret_code = secret_code[:-1]

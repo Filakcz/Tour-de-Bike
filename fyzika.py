@@ -159,87 +159,115 @@ class Bike:
     self.rychlost_animace = 0.5
     self.energie = 100
 
-  def tick(self):
-    keys = pygame.key.get_pressed()
+  def copy_state_from(self, other):
+        self.rear_axel.position = Vector(other.rear_axel.position.x, other.rear_axel.position.y)
+        self.rear_axel.last_position = Vector(other.rear_axel.last_position.x, other.rear_axel.last_position.y)
+        self.front_axel.position = Vector(other.front_axel.position.x, other.front_axel.position.y)
+        self.front_axel.last_position = Vector(other.front_axel.last_position.x, other.front_axel.last_position.y)
+        self.rear_wheel.position = Vector(other.rear_wheel.position.x, other.rear_wheel.position.y)
+        self.rear_wheel.last_position = Vector(other.rear_wheel.last_position.x, other.rear_wheel.last_position.y)
+        self.front_wheel.position = Vector(other.front_wheel.position.x, other.front_wheel.position.y)
+        self.front_wheel.last_position = Vector(other.front_wheel.last_position.x, other.front_wheel.last_position.y)
+        self.animace_index = other.animace_index
+        self.rychlost_animace = other.rychlost_animace
+        self.energie = other.energie
 
-    self.rear_axel.apply_gravity(Vector(*config.GRAVITY))
-    self.front_axel.apply_gravity(Vector(*config.GRAVITY))
-    self.rear_wheel.apply_gravity(Vector(*config.GRAVITY))
-    self.front_wheel.apply_gravity(Vector(*config.GRAVITY))
-  
-    # suspension
-    # rear wheel
-    sus_force = (self.rear_axel.position - self.rear_wheel.position) * config.SUS_REAR
-    self.rear_wheel.apply_force(sus_force)
-    self.rear_axel.apply_force(sus_force * -1)
-    self.rear_wheel.damp_relative_speed(self.rear_axel, config.DAMP_REAR)
+  def interpolate(self, other, alpha):
+      # chat potahal
+      interp = Bike(Vector(0, 0))
+      interp.rear_axel.position = self.rear_axel.position * (1 - alpha) + other.rear_axel.position * alpha
+      interp.front_axel.position = self.front_axel.position * (1 - alpha) + other.front_axel.position * alpha
+      interp.rear_wheel.position = self.rear_wheel.position * (1 - alpha) + other.rear_wheel.position * alpha
+      interp.front_wheel.position = self.front_wheel.position * (1 - alpha) + other.front_wheel.position * alpha
+      interp.animace_index = self.animace_index * (1 - alpha) + other.animace_index * alpha
+      interp.rychlost_animace = self.rychlost_animace
+      interp.energie = self.energie * (1 - alpha) + other.energie * alpha
+      return interp
 
-    # front wheel
-    sus_force = (self.front_axel.position - self.front_wheel.position) * config.SUS_FRONT
-    self.front_wheel.apply_force(sus_force)
-    self.front_axel.apply_force(sus_force * -1)
-    self.front_wheel.damp_relative_speed(self.front_axel, config.DAMP_FRONT)
+  def tick(self, pressed_keys):
+        self.rear_axel.apply_gravity(Vector(*config.GRAVITY))
+        self.front_axel.apply_gravity(Vector(*config.GRAVITY))
+        self.rear_wheel.apply_gravity(Vector(*config.GRAVITY))
+        self.front_wheel.apply_gravity(Vector(*config.GRAVITY))
 
-    # bike frame
-    midpoint = (self.rear_axel.position + self.front_axel.position) / 2
-    scaling_cof = config.BIKE_LENGTH / self.rear_axel.position.distance_to(self.front_axel.position)
+        rear_speed = self.rear_wheel.get_speed()
+        front_speed = self.front_wheel.get_speed()
+        self.rear_wheel.apply_force(rear_speed * -config.AIR_RESISTANCE)
+        self.front_wheel.apply_force(front_speed * -config.AIR_RESISTANCE)
 
-    self.rear_axel.set_position(midpoint + (self.rear_axel.get_position() - midpoint) * scaling_cof)
-    self.front_axel.set_position(midpoint + (self.front_axel.get_position() - midpoint) * scaling_cof)
+        # suspension
+        # rear wheel
+        sus_force = (self.rear_axel.position - self.rear_wheel.position) * config.SUS_REAR
+        self.rear_wheel.apply_force(sus_force)
+        self.rear_axel.apply_force(sus_force * -1)
+        self.rear_wheel.damp_relative_speed(self.rear_axel, config.DAMP_REAR)
 
-    # collision check
-    # rear wheel
-    touch_point = wheel_collision_check(self.rear_wheel, config.WHEEL_RADIUS)
-    if touch_point is not None:
-      new_position = self.rear_wheel.get_position() + (self.rear_wheel.get_position() - touch_point).normalized() * (config.WHEEL_RADIUS - self.rear_wheel.get_position().distance_to(touch_point))
-      self.rear_wheel.set_position(new_position)
-      if self.energie > 0:
-        if keys[pygame.K_a]:
-          self.animace_index -= self.rychlost_animace
-          if self.animace_index < 0:
-              self.animace_index = 12
-          self.rear_wheel.apply_force((self.rear_axel.position - self.front_axel.position).normalized() * config.SLAPANI_FROCE)
-        if keys[pygame.K_d]:
-          self.animace_index += self.rychlost_animace
-          if self.animace_index >= 13:
-              self.animace_index = 0
-          self.rear_wheel.apply_force((self.front_axel.position - self.rear_axel.position).normalized() * config.SLAPANI_FROCE)
+        # front wheel
+        sus_force = (self.front_axel.position - self.front_wheel.position) * config.SUS_FRONT
+        self.front_wheel.apply_force(sus_force)
+        self.front_axel.apply_force(sus_force * -1)
+        self.front_wheel.damp_relative_speed(self.front_axel, config.DAMP_FRONT)
 
-    if keys[pygame.K_a]:
-        if self.energie > 0:
-            self.animace_index -= self.rychlost_animace
-            if self.animace_index < 0:
-                self.animace_index = 12
-        self.front_axel.apply_force((self.rear_axel.position - self.front_axel.position).normalized().perpendicular() * config.INAIR_FORCE)
-        self.rear_axel.apply_force((self.rear_axel.position - self.front_axel.position).normalized().perpendicular() * -config.INAIR_FORCE)
-    if keys[pygame.K_d]:
-        if self.energie > 0:
-            self.animace_index += self.rychlost_animace
-            if self.animace_index >= 13:
-                self.animace_index = 0
-        self.front_axel.apply_force((self.rear_axel.position - self.front_axel.position).normalized().perpendicular() * -config.INAIR_FORCE)
-        self.rear_axel.apply_force((self.rear_axel.position - self.front_axel.position).normalized().perpendicular() * config.INAIR_FORCE)
+        # bike frame
+        midpoint = (self.rear_axel.position + self.front_axel.position) / 2
+        scaling_cof = config.BIKE_LENGTH / self.rear_axel.position.distance_to(self.front_axel.position)
 
-    # front wheel
-    touch_point = wheel_collision_check(self.front_wheel, config.WHEEL_RADIUS)
-    if touch_point is not None:
-      new_position = self.front_wheel.get_position() + (self.front_wheel.get_position() - touch_point).normalized() * (config.WHEEL_RADIUS - self.front_wheel.get_position().distance_to(touch_point))
-      self.front_wheel.set_position(new_position)
-    
-    # rear wheel
-    closest_point = closest_point_on_line(self.rear_axel.get_position(), self.rear_axel.get_position() + (self.rear_axel.get_position() - self.rear_axel.get_position()).perpendicular(), self.rear_wheel.get_position())
-    midpoint = (closest_point + self.rear_wheel.get_position()) / 2
-    self.rear_axel.move_by(midpoint - closest_point)
-    self.rear_wheel.move_to(midpoint)
+        self.rear_axel.set_position(midpoint + (self.rear_axel.get_position() - midpoint) * scaling_cof)
+        self.front_axel.set_position(midpoint + (self.front_axel.get_position() - midpoint) * scaling_cof)
 
-    closest_point = closest_point_on_line(self.front_axel.get_position(), self.front_axel.get_position() + (self.front_axel.get_position() - self.front_axel.get_position()).perpendicular(), self.front_wheel.get_position())
-    midpoint = (closest_point + self.front_wheel.get_position()) / 2
-    self.front_axel.move_by(midpoint - closest_point)
-    self.front_wheel.move_to(midpoint)
+        # collision check
+        # rear wheel
+        touch_point = wheel_collision_check(self.rear_wheel, config.WHEEL_RADIUS)
+        if touch_point is not None:
+            new_position = self.rear_wheel.get_position() + (self.rear_wheel.get_position() - touch_point).normalized() * (config.WHEEL_RADIUS - self.rear_wheel.get_position().distance_to(touch_point))
+            self.rear_wheel.set_position(new_position)
+            if self.energie > 0:
+                if pressed_keys[pygame.K_a]:
+                    self.animace_index -= self.rychlost_animace
+                    if self.animace_index < 0:
+                        self.animace_index = 12
+                    self.rear_wheel.apply_force((self.rear_axel.position - self.front_axel.position).normalized() * config.SLAPANI_FROCE)
+                if pressed_keys[pygame.K_d]:
+                    self.animace_index += self.rychlost_animace
+                    if self.animace_index >= 13:
+                        self.animace_index = 0
+                    self.rear_wheel.apply_force((self.front_axel.position - self.rear_axel.position).normalized() * config.SLAPANI_FROCE)
 
-    self.rear_axel.tick()
-    self.front_axel.tick()
-    self.rear_wheel.tick()
-    self.front_wheel.tick()
+        if pressed_keys[pygame.K_a]:
+            if self.energie > 0:
+                self.animace_index -= self.rychlost_animace
+                if self.animace_index < 0:
+                    self.animace_index = 12
+            self.front_axel.apply_force((self.rear_axel.position - self.front_axel.position).normalized().perpendicular() * config.INAIR_FORCE)
+            self.rear_axel.apply_force((self.rear_axel.position - self.front_axel.position).normalized().perpendicular() * -config.INAIR_FORCE)
+        if pressed_keys[pygame.K_d]:
+            if self.energie > 0:
+                self.animace_index += self.rychlost_animace
+                if self.animace_index >= 13:
+                    self.animace_index = 0
+            self.front_axel.apply_force((self.rear_axel.position - self.front_axel.position).normalized().perpendicular() * -config.INAIR_FORCE)
+            self.rear_axel.apply_force((self.rear_axel.position - self.front_axel.position).normalized().perpendicular() * config.INAIR_FORCE)
+
+        # front wheel
+        touch_point = wheel_collision_check(self.front_wheel, config.WHEEL_RADIUS)
+        if touch_point is not None:
+            new_position = self.front_wheel.get_position() + (self.front_wheel.get_position() - touch_point).normalized() * (config.WHEEL_RADIUS - self.front_wheel.get_position().distance_to(touch_point))
+            self.front_wheel.set_position(new_position)
+
+        # rear wheel
+        closest_point = closest_point_on_line(self.rear_axel.get_position(), self.rear_axel.get_position() + (self.rear_axel.get_position() - self.rear_axel.get_position()).perpendicular(), self.rear_wheel.get_position())
+        midpoint = (closest_point + self.rear_wheel.get_position()) / 2
+        self.rear_axel.move_by(midpoint - closest_point)
+        self.rear_wheel.move_to(midpoint)
+
+        closest_point = closest_point_on_line(self.front_axel.get_position(), self.front_axel.get_position() + (self.front_axel.get_position() - self.front_axel.get_position()).perpendicular(), self.front_wheel.get_position())
+        midpoint = (closest_point + self.front_wheel.get_position()) / 2
+        self.front_axel.move_by(midpoint - closest_point)
+        self.front_wheel.move_to(midpoint)
+
+        self.rear_axel.tick()
+        self.front_axel.tick()
+        self.rear_wheel.tick()
+        self.front_wheel.tick()
 
 

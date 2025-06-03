@@ -111,7 +111,7 @@ class Mince(pygame.sprite.Sprite):
     def get_position(self):
         return int(self.svet_x), int(self.svet_y)
 
-def vykresli_ui(screen, km, energie, kolo_x, rychlost, cas):
+def vykresli_ui(screen, km, energie, kolo_x, rychlost, cas, uhel_rucicky):
     vykresli_text(screen, f"Distance: {round(km/1000,1)} km", (0, 0, 0), (22, 20))
 
     pygame.draw.rect(screen, (50, 50, 50), (20, 90, 250, 40))
@@ -132,8 +132,11 @@ def vykresli_ui(screen, km, energie, kolo_x, rychlost, cas):
     stred_x = 250
     stred_y = 845
     delka_rucicky = 170
-    uhel = -220 + (abs(rychlost) / 70) * 262
-    uhel_rad = math.radians(uhel)
+    cilovy_uhel = -220 + (abs(rychlost) / 1500) * 262
+
+    novy_uhel = uhel_rucicky + (cilovy_uhel - uhel_rucicky) * 0.15
+
+    uhel_rad = math.radians(novy_uhel)
     konec_x = stred_x + delka_rucicky * math.cos(uhel_rad)
     konec_y = stred_y + delka_rucicky * math.sin(uhel_rad)
     pygame.draw.line(screen, (255, 0, 0), (stred_x, stred_y), (konec_x, konec_y), 6)
@@ -156,6 +159,8 @@ def vykresli_ui(screen, km, energie, kolo_x, rychlost, cas):
         if nejblizsi:
             vzdalenost = nejblizsi.svet_x - kolo_x
             vykresli_text(screen, f"{round(vzdalenost/1000,1)} km →", (0, 0, 0), (config.obrazovka_sirka - 20, 200), zarovnat="right")
+
+    return novy_uhel
 
 def vykresli_teren(screen, kamera_x, kamera_y, kaminky):
     
@@ -350,7 +355,6 @@ obloha_img = pygame.transform.smoothscale(obloha_img, (config.obrazovka_sirka, c
 mrak_img = pygame.image.load("img/mrak.png").convert_alpha()
 mrak_img = pygame.transform.smoothscale(mrak_img, (mrak_img.get_width() // 2, mrak_img.get_height() // 2))
 
-ztrata_energie = 0.05
 rust_vzdalenosti = 200
 
 def rotace_bodu(bod, pivot, uhel_stupne):
@@ -392,10 +396,16 @@ def main():
     start_cas = pygame.time.get_ticks()
     bezi = True
 
+    # https://gafferongames.com/post/fix_your_timestep/
     clock = pygame.time.Clock()
-    fps_tick = int(30 + config.fps_limit * 240)
+    dt = 1.0 / 60
+    accumulator = 0.0
+    t = 0.0
+    posledni_cas = pygame.time.get_ticks() / 1000.0
     
     kolo = Bike(Vector(0, fyzika.generace_bod(0)-200))
+    kolo_predchozi = Bike(Vector(0, fyzika.generace_bod(0)-200))
+    kolo_predchozi.copy_state_from(kolo)
 
     km_ujet = 0
     vzdalenost_predmetu = 1000
@@ -436,112 +446,19 @@ def main():
     energie_predmety.empty()
     mince_predmety.empty()
 
+    uhel_rucicky = -220 
+
     while bezi:
-        screen.blit(obloha_img, (0, 0))
-        if not config.potato_pc:
-            vykresli_mraky(screen, camera.x, camera.y, mraky)
+        ted = pygame.time.get_ticks() / 1000.0
+        snimky_cas = ted - posledni_cas
+        if snimky_cas > 0.25:
+            snimky_cas = 0.25
+        posledni_cas = ted
 
-        kolo.tick()
-        vykresli_kolo(kolo, camera, rafek_img, ram_obrazky[int(kolo.animace_index)])
-        
-        vykresli_teren(screen, camera.x, camera.y, kaminky)
+        accumulator += snimky_cas
 
-        while kolo.rear_axel.position.x + config.obrazovka_sirka >= posledni_mince + vzadelnost_minci:
-
-            posledni_mince += vzadelnost_minci
-
-            je_blizko = False
-            for energie_predmet in energie_predmety.copy():
-                if abs(posledni_mince - energie_predmet.svet_x) < 50:
-                    je_blizko = True
-                    break
-
-            if not je_blizko:
-                mince_predmety.add(Mince(posledni_mince, fyzika.generace_bod(posledni_mince)-random.randint(100,250)))
-
-        for mince in mince_predmety.copy():
-            mince.vykresli(screen, camera.x, camera.y)
-            if abs(mince.svet_x - kolo.rear_axel.position.x) < 400:
-                mince_mask = mince.get_mask()
-                mince_pos = (int(mince.svet_x - camera.x), int(mince.svet_y - camera.y))
-                kolo_masky = [(maska_kola, kolo_pos), (rafek_mask_rear, rafek_pos_rear),(rafek_mask_front, rafek_pos_front)]
-                for mask, pos in kolo_masky:
-                    offset = (mince_pos[0] - pos[0], mince_pos[1] - pos[1])
-                    if mask.overlap(mince_mask, offset):
-                        config.prachy += 1
-                        mince_predmety.remove(mince)
-
-        for predmet in energie_predmety.copy():
-            predmet.vykresli(screen, camera.x, camera.y)
-            if abs(predmet.svet_x - kolo.rear_axel.position.x) < 400:
-                predmet_mask = predmet.get_mask()
-                predmet_pos = (int(predmet.svet_x - camera.x), int(predmet.svet_y - camera.y))
-                kolo_masky = [(maska_kola, kolo_pos), (rafek_mask_rear, rafek_pos_rear),(rafek_mask_front, rafek_pos_front)]
-                for mask, pos in kolo_masky:
-                    offset = (predmet_pos[0] - pos[0], predmet_pos[1] - pos[1])
-                    if mask.overlap(predmet_mask, offset):
-                        kolo.energie = min(kolo.energie + predmet.pridavek_energie, 100)
-                        energie_predmety.remove(predmet)
-                        break
-
-        if kolo.rear_axel.get_position().x > vzdalenost_predmetu:
-            kolikaty_banan += 1
-            vzdalenost_predmetu += rust_vzdalenosti * kolikaty_banan
-            nova_predmet_x = kolo.rear_axel.get_position().x + vzdalenost_predmetu
-            energie_predmety.add(EnergetickyPredmet(nova_predmet_x, fyzika.generace_bod(nova_predmet_x) - 150, jidlo_img, jidlo_energie))
-
-        km_ujet = kolo.rear_axel.get_position().x
-
-        kolo.energie -= ztrata_energie
-        if kolo.energie < -10:
-            while True:
-                akce = konec_menu(screen, km_ujet)
-                if akce == "restart":
-                    main()
-                    return
-                elif akce == "menu":
-                    return
-
-        vrchni_levy_roh_x = kolo.rear_axel.position.x + offset_x
-        vrchni_levy_roh_y = kolo.rear_axel.position.y + offset_y
-        
-        rohy = [
-            rotace_bodu((vrchni_levy_roh_x, vrchni_levy_roh_y), (kolo.rear_axel.position.x, kolo.rear_axel.position.y), -uhel),
-            rotace_bodu((vrchni_levy_roh_x + hlava_sirka, vrchni_levy_roh_y), (kolo.rear_axel.position.x, kolo.rear_axel.position.y), -uhel),
-            rotace_bodu((vrchni_levy_roh_x + hlava_sirka, vrchni_levy_roh_y + hlava_vyska), (kolo.rear_axel.position.x, kolo.rear_axel.position.y), -uhel),
-            rotace_bodu((vrchni_levy_roh_x, vrchni_levy_roh_y + hlava_vyska), (kolo.rear_axel.position.x, kolo.rear_axel.position.y), -uhel)
-        ]
-
-        kolize = False
-        krok = 10
-        for i in range(4):
-            x1, y1 = rohy[i]
-            x2, y2 = rohy[(i+1)%4]
-            for s in range(krok + 1):
-                t = s / krok
-                x = x1 + (x2 - x1) * t
-                y = y1 + (y2 - y1) * t
-                vyska_terenu = fyzika.generace_bod(x)
-                if y > vyska_terenu:
-                    kolize = True
-                    break
-            if kolize:
-                break
-
-        if kolize:
-            while True:
-                akce = konec_menu(screen, km_ujet)
-                if akce == "restart": 
-                    main()
-                    return
-                elif akce == "menu":
-                    return
-
-        rychlost = kolo.rear_wheel.get_speed().x
-        vykresli_ui(screen, km_ujet, kolo.energie, kolo.rear_axel.get_position().x, rychlost, pygame.time.get_ticks() - start_cas)
-
-        vykresli_text(screen, f"Money: {config.prachy}", (255, 215, 0), (22, 360), velikost=50)
-
+        # PYGAME EVENTY
+        pressed_keys = pygame.key.get_pressed()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -566,6 +483,125 @@ def main():
                         return
                     elif akce == "menu":
                         bezi = False
+
+        # FYZYKA
+        while accumulator >= dt:
+            kolo_predchozi.copy_state_from(kolo)
+
+            kolo.tick(pressed_keys)
+            kolo.energie -= config.ztrata_energie * dt
+
+            # mince spawn
+            while kolo.rear_axel.position.x + config.obrazovka_sirka >= posledni_mince + vzadelnost_minci:
+                posledni_mince += vzadelnost_minci
+                je_blizko = False
+                for energie_predmet in energie_predmety.copy():
+                    if abs(posledni_mince - energie_predmet.svet_x) < 50:
+                        je_blizko = True
+                        break
+                if not je_blizko:
+                    mince_predmety.add(Mince(posledni_mince, fyzika.generace_bod(posledni_mince)-random.randint(100,250)))
+
+            # kolize mince
+            for mince in mince_predmety.copy():
+                if abs(mince.svet_x - kolo.rear_axel.position.x) < 400:
+                    mince_mask = mince.get_mask()
+                    mince_pos = (int(mince.svet_x - camera.x), int(mince.svet_y - camera.y))
+                    kolo_masky = [(maska_kola, kolo_pos), (rafek_mask_rear, rafek_pos_rear), (rafek_mask_front, rafek_pos_front)]
+                    for mask, pos in kolo_masky:
+                        offset = (mince_pos[0] - pos[0], mince_pos[1] - pos[1])
+                        if mask.overlap(mince_mask, offset):
+                            config.prachy += 1
+                            mince_predmety.remove(mince)
+                            break
+
+            # kolize energie
+            for predmet in energie_predmety.copy():
+                if abs(predmet.svet_x - kolo.rear_axel.position.x) < 400:
+                    predmet_mask = predmet.get_mask()
+                    predmet_pos = (int(predmet.svet_x - camera.x), int(predmet.svet_y - camera.y))
+                    kolo_masky = [(maska_kola, kolo_pos), (rafek_mask_rear, rafek_pos_rear), (rafek_mask_front, rafek_pos_front)]
+                    for mask, pos in kolo_masky:
+                        offset = (predmet_pos[0] - pos[0], predmet_pos[1] - pos[1])
+                        if mask.overlap(predmet_mask, offset):
+                            kolo.energie = min(kolo.energie + predmet.pridavek_energie, 100)
+                            energie_predmety.remove(predmet)
+                            break
+
+            # spawn energie
+            if kolo.rear_axel.get_position().x > vzdalenost_predmetu:
+                kolikaty_banan += 1
+                vzdalenost_predmetu += rust_vzdalenosti * kolikaty_banan
+                nova_predmet_x = kolo.rear_axel.get_position().x + vzdalenost_predmetu
+                energie_predmety.add(EnergetickyPredmet(nova_predmet_x, fyzika.generace_bod(nova_predmet_x) - 150, jidlo_img, jidlo_energie))
+
+            # smrt - energie
+            km_ujet = kolo.rear_axel.get_position().x
+            if kolo.energie < -10:
+                while True:
+                    akce = konec_menu(screen, km_ujet)
+                    if akce == "restart":
+                        main()
+                        return
+                    elif akce == "menu":
+                        return
+
+            # smrt - kolize hlavy
+            vrchni_levy_roh_x = kolo.rear_axel.position.x + offset_x
+            vrchni_levy_roh_y = kolo.rear_axel.position.y + offset_y
+            rohy = [
+                rotace_bodu((vrchni_levy_roh_x, vrchni_levy_roh_y), (kolo.rear_axel.position.x, kolo.rear_axel.position.y), -uhel),
+                rotace_bodu((vrchni_levy_roh_x + hlava_sirka, vrchni_levy_roh_y), (kolo.rear_axel.position.x, kolo.rear_axel.position.y), -uhel),
+                rotace_bodu((vrchni_levy_roh_x + hlava_sirka, vrchni_levy_roh_y + hlava_vyska), (kolo.rear_axel.position.x, kolo.rear_axel.position.y), -uhel),
+                rotace_bodu((vrchni_levy_roh_x, vrchni_levy_roh_y + hlava_vyska), (kolo.rear_axel.position.x, kolo.rear_axel.position.y), -uhel)
+            ]
+            kolize = False
+            krok = config.krok
+            for i in range(4):
+                x1, y1 = rohy[i]
+                x2, y2 = rohy[(i+1)%4]
+                for s in range(krok + 1):
+                    t = s / krok
+                    x = x1 + (x2 - x1) * t
+                    y = y1 + (y2 - y1) * t
+                    vyska_terenu = fyzika.generace_bod(x)
+                    if y > vyska_terenu:
+                        kolize = True
+                        break
+                if kolize:
+                    break
+            if kolize:
+                while True:
+                    akce = konec_menu(screen, km_ujet)
+                    if akce == "restart":
+                        main()
+                        return
+                    elif akce == "menu":
+                        return
+
+            accumulator -= dt
+
+        # INTERPOLACE
+        alpha = accumulator / dt
+        kolo_interpolace = kolo_predchozi.interpolate(kolo, alpha)
+
+        # KRESLENI
+        screen.blit(obloha_img, (0, 0))
+        if not config.potato_pc:
+            vykresli_mraky(screen, camera.x, camera.y, mraky)
+        vykresli_kolo(kolo_interpolace, camera, rafek_img, ram_obrazky[int(kolo_interpolace.animace_index)])
+        vykresli_teren(screen, camera.x, camera.y, kaminky)
+
+        for mince in mince_predmety.copy():
+            mince.vykresli(screen, camera.x, camera.y)
+        for predmet in energie_predmety.copy():
+            predmet.vykresli(screen, camera.x, camera.y)
+
+        vykresli_text(screen, f"{round(kolo.rear_wheel.get_speed().x / dt)}", (255,255,255), (300,300))
+        rychlost = (kolo.rear_wheel.get_speed().x / dt)
+        uhel_rucicky = vykresli_ui(screen, kolo_interpolace.rear_axel.get_position().x, kolo_interpolace.energie, kolo_interpolace.rear_axel.get_position().x, rychlost, pygame.time.get_ticks() - start_cas, uhel_rucicky)
+        vykresli_text(screen, f"Money: {config.prachy}", (255, 215, 0), (22, 360), velikost=50)
+
         if config.fps:
             fps = clock.get_fps()
             vykresli_text(screen, f"FPS: {int(fps)}", (0, 0, 0), (20, 150), velikost=100)
@@ -582,7 +618,7 @@ def main():
         pygame.draw.rect(screen, cara_barva, (x1, y, cara_sirka, cara_vyska), border_radius=6)
         pygame.draw.rect(screen, cara_barva, (x2, y, cara_sirka, cara_vyska), border_radius=6)
 
-        camera = fyzika.lerp(camera, kolo.rear_axel.position - Vector(-config.BIKE_LENGTH / 2 + config.obrazovka_sirka/2, config.obrazovka_vyska/1.5), 0.1)
+        camera = fyzika.lerp(camera, kolo_interpolace.rear_axel.position - Vector(-config.BIKE_LENGTH / 2 + config.obrazovka_sirka/2, config.obrazovka_vyska/1.5), 0.1)
+        clock.tick(int(30 + config.fps_limit * 240))
         pygame.display.flip()
-        clock.tick(fps_tick)
-
+        
