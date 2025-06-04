@@ -21,9 +21,28 @@ silnicka_img = pygame.image.load("img/silnicka.png").convert_alpha()
 celopero_img = pygame.image.load("img/celopero.png").convert_alpha()
 hardtail_img = pygame.image.load("img/hardtail.png").convert_alpha()
 bike_imgs = [("Road bike", silnicka_img), ("Hardtail", hardtail_img), ("Full suspension", celopero_img)]
+kolo_delka = 500
+for i in range(len(bike_imgs)):
+    delka = bike_imgs[i][1].get_width()
+    k = kolo_delka / delka
+    kolo_vyska = k * bike_imgs[i][1].get_height()
+    bike_imgs[i] = (bike_imgs[i][0], pygame.transform.smoothscale(bike_imgs[i][1], (k * delka, kolo_vyska)))
 
 obloha_img = pygame.image.load("img/obloha.png").convert()
 obloha_img = pygame.transform.smoothscale(obloha_img, (config.obrazovka_sirka, config.obrazovka_vyska))
+
+jidla = [
+    ("Banana", pygame.image.load("img/banan.png").convert_alpha(), 30),
+    ("Protein bar", pygame.image.load("img/tycinka.png").convert_alpha(), 50),
+    ("Chicken", pygame.image.load("img/kure.png").convert_alpha(), 100)
+]
+jidlo_delka = 80
+for i in range(len(jidla)):
+    delka = jidla[i][1].get_width()
+    k = jidlo_delka / delka
+
+    jidla[i] = (jidla[i][0], pygame.transform.smoothscale(jidla[i][1], (k * delka, k * jidla[i][1].get_height())), jidla[i][2])
+
 
 #vybrane_kolo = 0 # 0=silnicka, 1=hardtail, 2=celopero
 #vybrane_jidlo = 0 # 0=banan, 1=tycinka, 2=kure
@@ -57,6 +76,7 @@ def menu():
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                config.uloz_config()
                 pygame.quit()
                 quit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -69,6 +89,7 @@ def menu():
                 elif tlacitko_nastaveni.collidepoint(event.pos):
                     menu_nastaveni()
                 elif tlacitko_konec.collidepoint(event.pos):
+                    config.uloz_config()
                     pygame.quit()
                     quit()
 
@@ -76,58 +97,97 @@ def menu_vylepseni():
     bezi = True
     while bezi:
         screen.blit(obloha_img, (0, 0))
-        vykresli_text(screen, "Upgrades", (0,0,0), (100,100))
+        vykresli_text(screen, "upgraderades", (0,0,0), (100,100))
 
-        leva_sipka = pygame.Rect(200, 350, 80, 120)
-        prava_sipka = pygame.Rect(680, 350, 80, 120)
-        _, obrazek = bike_imgs[config.vybrane_kolo]
-        sirka_obrazek = obrazek.get_width()
-        k = 300 / sirka_obrazek
-        vyska_obrazek = obrazek.get_height() * k
-        sirka_obrazek *= k
-        
 
+        leva_sipka = pygame.Rect(100, 400, 120, 150)
+        prava_sipka = pygame.Rect(220 + 2 * margin_x + kolo_delka, 400, 120, 150)
         pygame.draw.polygon(screen, (100, 100, 100), [(leva_sipka.right, leva_sipka.top), (leva_sipka.left, leva_sipka.centery), (leva_sipka.right, leva_sipka.bottom)])
         pygame.draw.polygon(screen, (100, 100, 100), [(prava_sipka.left, prava_sipka.top), (prava_sipka.right, prava_sipka.centery), (prava_sipka.left, prava_sipka.bottom)])
 
+        id_kola = config.vybrane_kolo
+        kolo_nazev, kolo_img = bike_imgs[id_kola]
 
-        kolo_nazev, kolo_img = bike_imgs[config.vybrane_kolo]
-        kolo_img_scaled = pygame.transform.smoothscale(kolo_img, (sirka_obrazek, vyska_obrazek))
-        x = leva_sipka.right + 50
-        y = leva_sipka.top - 100
-        screen.blit(kolo_img_scaled, (x,y))
-        vykresli_text(screen, kolo_nazev, (0, 0, 0), (sirka_obrazek/2 + x, vyska_obrazek + y + 30), "center")
+        kolo_rect = pygame.Rect(leva_sipka.right + margin_x, leva_sipka.top - 80, kolo_delka, kolo_vyska)
+        screen.blit(kolo_img, (kolo_rect.x, kolo_rect.y))
+        vykresli_text(screen, kolo_nazev, (0, 0, 0), (kolo_rect.centerx, kolo_rect.bottom + 50), "center", 80)
 
-        upgrade1 = pygame.Rect(100, 600, 600, 100)
-        upgrade2 = pygame.Rect(100, 750, 600, 100)
-        vykresli_tlacitko(screen, "+ SPEED (nefugnuje)", upgrade1, barva_pozadi=(180, 180, 255), barva_textu=(0,0,0))
-        vykresli_tlacitko(screen, "+ ENDURANCE (nefugnuje)", upgrade2, barva_pozadi=(180, 255, 180), barva_textu=(0,0,0))
+        tlacitko_kolo = pygame.Rect(kolo_rect.x + margin_x, kolo_rect.y-100, kolo_rect.width - 2 * margin_x, 70)
+        if config.kola_odemcena[id_kola]:
+            if config.vybrane_kolo == id_kola:
+                barva = (180,255,180)
+            else:
+                barva = (200,200,200)
+            vykresli_tlacitko(screen, "Selected", tlacitko_kolo, barva_pozadi=barva, barva_textu=(0,0,0))
+        else:
+            barva = (255,220,220)
+            vykresli_tlacitko(screen, f"Buy: {config.ceny_kol[id_kola]} $", tlacitko_kolo, barva_pozadi=barva, barva_textu=(0,0,0))
 
-        jidlo_rects = [
-            pygame.Rect(800, 550, 200, 100),  # banan
-            pygame.Rect(800, 700, 200, 100),  # tycinka
-            pygame.Rect(800, 850, 200, 100),  # kure
-        ]
-        jidla = ["Banana", "Protein bar", "Chicken"]
-        barvy = [(255, 255, 180), (220, 255, 220), (255, 220, 220)]
-
-        for i in range(3):
-            vykresli_tlacitko(
+        upgrade_names = ["Speed", "Endurance"]
+        upgrade_rects = []
+        for upgrade_idx in range(2):
+            upgrade_name = upgrade_names[upgrade_idx]
+            upgrade_level = config.kola_upgrady[id_kola][upgrade_idx]
+            upgrade_rect = pygame.Rect(kolo_rect.x, kolo_rect.bottom + 100 + upgrade_idx*60, kolo_rect.width, 50)
+            upgrade_rects.append(upgrade_rect)
+            if upgrade_idx == 0:
+                barva = (180,180,255)
+            else:
+                barva = (180,255,180)
+            if upgrade_level == config.max_upgrade:
+                vykresli_tlacitko(
+                    screen,
+                    f"{upgrade_name}: Maxed",
+                    upgrade_rect,
+                    barva_pozadi=barva,
+                    barva_textu=(0,0,0)
+                )
+            else:
+                vykresli_tlacitko(
                 screen,
-                jidla[i],
-                jidlo_rects[i],
-                barva_pozadi=barvy[i],
-                barva_textu=(0,0,0),
-                barva_okraje=(0,0,255) if config.vybrane_jidlo == i else (0,0,0),
-                tloustka_okraje=5 if config.vybrane_jidlo == i else 2
-            )
+                f"{upgrade_name}: {upgrade_level}/{config.max_upgrade} {config.cena_upgrade[upgrade_idx]}$",
+                upgrade_rect,
+                barva_pozadi=barva,
+                barva_textu=(0,0,0)
+                )
 
+        jidlo_rects = []
+        for i in range(len(jidla)):
+            nazev, img, energie = jidla[i]
+            y = 250 + i * 180
+            rect = pygame.Rect(1200, y, 260, 140)
+            jidlo_rects.append(rect)
+            if i == 0:
+                barva = (255,255,180)
+            elif i == 1:
+                barva = (220,255,220)
+            else:
+                barva = (255,220,220)
+            pygame.draw.rect(screen, barva, rect)
+            screen.blit(img, (rect.x + 10, rect.y + 30))
+            vykresli_text(screen, nazev, (0,0,0), (rect.x + 110, rect.y + 25), "left", 38)
+            vykresli_text(screen, f"Energy: {energie}", (0,0,0), (rect.x + 110, rect.y + 70), "left", 30)
+            tlacitko = pygame.Rect(rect.x, rect.bottom-35, rect.width, 35)
+            if config.jidla_odemcena[i]:
+                if config.vybrane_jidlo == i:
+                    barva_pozadi = (180,255,180)
+                else:
+                    barva_pozadi = (200,200,200)
+                if config.vybrane_jidlo == i:
+                    vykresli_tlacitko(screen, "Selected", tlacitko, barva_pozadi=barva_pozadi, barva_textu=(0,0,0))
+                else:
+                    vykresli_tlacitko(screen, "Select", tlacitko, barva_pozadi=barva_pozadi, barva_textu=(0,0,0))
+            else:
+                vykresli_tlacitko(screen, f"Buy: {config.ceny_jidel[i]} $", tlacitko, barva_pozadi=(255,220,220), barva_textu=(0,0,0))
+
+        vykresli_text(screen, f"Money: {config.prachy}", (255, 215, 0), (600, 80), "center", 60)
         tlacitko_zpet = pygame.Rect(50, 900, 200, 100)
         vykresli_tlacitko(screen, "Back", tlacitko_zpet, barva_pozadi=(255, 100, 100), barva_textu=(0,0,0))
 
         pygame.display.flip()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                config.uloz_config()
                 pygame.quit()
                 quit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -135,16 +195,37 @@ def menu_vylepseni():
                     config.vybrane_kolo = (config.vybrane_kolo - 1) % len(bike_imgs)
                 elif prava_sipka.collidepoint(event.pos):
                     config.vybrane_kolo = (config.vybrane_kolo + 1) % len(bike_imgs)
-                elif tlacitko_zpet.collidepoint(event.pos):
+                elif tlacitko_kolo.collidepoint(event.pos):
+                    id_kola = config.vybrane_kolo
+                    if config.kola_odemcena[id_kola]:
+                        config.vybrane_kolo = id_kola
+                    elif config.prachy >= config.ceny_kol[id_kola]:
+                        config.prachy -= config.ceny_kol[id_kola]
+                        config.kola_odemcena[id_kola] = True
+                        config.vybrane_kolo = id_kola
+                for upgrade_idx in range(2):
+                    upgrade_rect = upgrade_rects[upgrade_idx]
+                    if upgrade_rect.collidepoint(event.pos) and config.kola_odemcena[id_kola]:
+                        if config.kola_upgrady[id_kola][upgrade_idx] < config.max_upgrade and config.prachy >= config.cena_upgrade[upgrade_idx]:
+                            config.prachy -= config.cena_upgrade[upgrade_idx]
+                            config.kola_upgrady[id_kola][upgrade_idx] += 1
+
+                for i in range(len(jidlo_rects)):
+                    rect = jidlo_rects[i]
+                    if rect.collidepoint(event.pos):
+                        if config.jidla_odemcena[i]:
+                            config.vybrane_jidlo = i
+                        elif config.prachy >= config.ceny_jidel[i]:
+                            config.prachy -= config.ceny_jidel[i]
+                            config.jidla_odemcena[i] = True
+                            config.vybrane_jidlo = i
+
+                if tlacitko_zpet.collidepoint(event.pos):
+                    config.uloz_config()
                     bezi = False
-                elif jidlo_rects[0].collidepoint(event.pos):
-                    config.vybrane_jidlo = 0
-                elif jidlo_rects[1].collidepoint(event.pos):
-                    config.vybrane_jidlo = 1
-                elif jidlo_rects[2].collidepoint(event.pos):
-                    config.vybrane_jidlo = 2
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
+                    config.uloz_config()
                     bezi = False
 
 def vykresli_slider(screen, y, posuvnik_delka, value, popisek, max_text="100", jednotka = "%", min_text="0"):
@@ -211,16 +292,16 @@ def menu_nastaveni():
         screen.blit(obloha_img, (0, 0))
         vykresli_text(screen, "Settings", (0, 0, 0), (config.obrazovka_sirka//2, 100), "center", velikost=125)
 
-        slider_rect_sound = vykresli_slider(screen, 150, 300, config.volume_sound, "Sound volume:")
-        slider_rect_music = vykresli_slider(screen, 225, 300, config.volume_music, "Music volume:")
+        slider_rect_sound = vykresli_slider(screen, 170, 300, config.volume_sound, "Sound volume:")
+        slider_rect_music = vykresli_slider(screen, 245, 300, config.volume_music, "Music volume:")
 
-        checkbox_rect_potato = vykresli_zakliknuti(screen, 300, "Potato PC (disables stones and clouds):", config.potato_pc)
-        checkbox_rect_fps = vykresli_zakliknuti(screen, 375, "Show FPS counter:", config.fps)
-        slider_rect_fps_limit = vykresli_slider(screen, 450, 300, config.fps_limit, "FPS limit", 300, "FPS:")
-        checkbox_rect_fullscreen = vykresli_zakliknuti(screen, 525, "Fullscreen:", config.fullscreen)
+        checkbox_rect_potato = vykresli_zakliknuti(screen, 320, "Potato PC (disables stones and clouds):", config.potato_pc)
+        checkbox_rect_fps = vykresli_zakliknuti(screen, 395, "Show FPS counter:", config.fps)
+        slider_rect_fps_limit = vykresli_slider(screen, 470, 300, config.fps_limit, "FPS limit", 300, "FPS:")
+        checkbox_rect_fullscreen = vykresli_zakliknuti(screen, 545, "Fullscreen:", config.fullscreen)
 
-        vykresli_text(screen, "misto 1 na neco", (0,0,0), (margin_x, 600))
-        vykresli_text(screen, "misto 2 na neco", (0,0,0), (margin_x, 675))
+        tlacitko_reset_staty = pygame.Rect(margin_x, 630,300,80)
+        vykresli_tlacitko(screen, "Reset stats", tlacitko_reset_staty, barva_pozadi=(255, 200, 100), barva_textu=(0,0,0))
         
         vykresli_text(screen, "Secret code:", (0, 0, 0), (margin_x, 750))
         code_sirka, code_vyska = get_font(50, "Arial").size("Secret code:")
@@ -236,10 +317,10 @@ def menu_nastaveni():
                 vykresli_text(screen, zprava, (200, 0, 0), (config.obrazovka_sirka-margin_x,200), zarovnat="right", velikost=100)
             else:
                 vykresli_text(screen, zprava, (200, 0, 0), (config.obrazovka_sirka-margin_x,200), zarovnat="right")
-            if (pygame.time.get_ticks() / 1000) - zprava_cas > 2:
+            if (pygame.time.get_ticks() / 1000) - zprava_cas > 3:
                 zprava = ""
 
-        tlacitko_reset = pygame.Rect(config.obrazovka_sirka - margin_x - 300, config.obrazovka_vyska - 120, 300, 80)
+        tlacitko_reset = pygame.Rect(2 * margin_x + 300, 630, 300, 80)
         vykresli_tlacitko(screen, "Reset settings", tlacitko_reset, barva_pozadi=(255, 200, 100), barva_textu=(0,0,0))
 
         tlacitko_zpet = pygame.Rect(margin_x, config.obrazovka_vyska - 120, 200, 80)
@@ -252,6 +333,7 @@ def menu_nastaveni():
         pygame.display.flip()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                config.uloz_config()
                 pygame.quit()
                 quit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -285,6 +367,12 @@ def menu_nastaveni():
                     zprava = "Settings reset successfully!"
                     zprava_cas = pygame.time.get_ticks() / 1000
 
+                elif tlacitko_reset_staty.collidepoint(event.pos):
+                    config.prachy = 0
+                    config.vybrane_kolo = 0
+                    config.vybrane_jidlo = 0
+                    zprava = "Stats reset successfully!"
+                    zprava_cas = pygame.time.get_ticks() / 1000
 
                 elif kod_rect.collidepoint(event.pos):
                     zadavani_kodu = True
@@ -310,7 +398,6 @@ def menu_nastaveni():
                             zprava = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
                         zadavani_kodu = False
                         zprava_cas = pygame.time.get_ticks() / 1000
-
 
                     elif event.key == pygame.K_BACKSPACE:
                         secret_code = secret_code[:-1]

@@ -277,6 +277,7 @@ def pause_menu(screen):
         pygame.display.flip()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                config.uloz_config()
                 pygame.quit()
                 quit()
             elif event.type == pygame.KEYDOWN:
@@ -311,6 +312,7 @@ def konec_menu(screen, km_ujet):
         pygame.display.flip()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                config.uloz_config()
                 pygame.quit()
                 quit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -461,6 +463,7 @@ def main():
         pressed_keys = pygame.key.get_pressed()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                config.uloz_config()
                 pygame.quit()
                 quit()
             elif event.type == pygame.KEYDOWN:
