@@ -173,7 +173,6 @@ class Bike:
         self.energie = other.energie
 
   def interpolate(self, other, alpha):
-      # chat potahal
       interp = Bike(Vector(0, 0))
       interp.rear_axel.position = self.rear_axel.position * (1 - alpha) + other.rear_axel.position * alpha
       interp.front_axel.position = self.front_axel.position * (1 - alpha) + other.front_axel.position * alpha
@@ -189,11 +188,6 @@ class Bike:
         self.front_axel.apply_gravity(Vector(*config.GRAVITY))
         self.rear_wheel.apply_gravity(Vector(*config.GRAVITY))
         self.front_wheel.apply_gravity(Vector(*config.GRAVITY))
-
-        rear_speed = self.rear_wheel.get_speed()
-        front_speed = self.front_wheel.get_speed()
-        self.rear_wheel.apply_force(rear_speed * -config.AIR_RESISTANCE)
-        self.front_wheel.apply_force(front_speed * -config.AIR_RESISTANCE)
 
         # suspension
         # rear wheel

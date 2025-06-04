@@ -1,9 +1,9 @@
 import pygame
 import config
 from hra import main as spust_hru
-from hra import vykresli_text as vykresli_text
-from hra import vykresli_tlacitko as vykresli_tlacitko
-from hra import get_font as get_font
+from hra import vykresli_text
+from hra import vykresli_tlacitko
+from hra import get_font
 from fyzika import nastav_kolo
 
 pygame.init()
@@ -246,7 +246,7 @@ def menu_nastaveni():
         vykresli_tlacitko(screen, "Back", tlacitko_zpet, barva_pozadi=(255, 100, 100), barva_textu=(0,0,0))
 
         vykresli_text(screen, "Credits:", (0, 0, 0), (margin_x, 825))
-        vykresli_text(screen, "Ondra - physics, antialiasing, bugtesting; Rosta - bug fix stones, bugtesting; Martin - bugtesting", (0, 0, 0), (margin_x, 900), velikost=30)
+        vykresli_text(screen, "Ondra - physics, antialiasing, playtester; Rosta - bug fix stones, playtester; Martin - playtester", (0, 0, 0), (margin_x, 900), velikost=30)
         vykresli_text(screen, "", (0, 0, 0), (margin_x, 900))
 
         pygame.display.flip()
