@@ -72,7 +72,8 @@ def vykresli_text(surf, text, barva, pozice, zarovnat="left", velikost=50, font=
 def vykresli_tlacitko(surface, text, rect, barva_textu=(255,255,255), barva_pozadi=(0, 70, 140), barva_okraje=(0,0,0), tloustka_okraje=2, velikost_pisma=50, font="Arial"):
     pygame.draw.rect(surface, barva_pozadi, rect)
 
-    pygame.draw.rect(surface, barva_okraje, rect, tloustka_okraje)
+    if tloustka_okraje > 0:
+        pygame.draw.rect(surface, barva_okraje, rect, tloustka_okraje)
 
     vykresli_text(surface, text, barva_textu, rect.center, "center", velikost_pisma, font)
 
@@ -492,7 +493,7 @@ def main():
             kolo_predchozi.copy_state_from(kolo)
 
             kolo.tick(pressed_keys)
-            kolo.energie -= config.ztrata_energie * dt
+            kolo.energie -= config.ztrata_energie
 
             # mince spawn
             while kolo.rear_axel.position.x + config.obrazovka_sirka >= posledni_mince + vzadelnost_minci:
@@ -600,7 +601,6 @@ def main():
         for predmet in energie_predmety.copy():
             predmet.vykresli(screen, camera.x, camera.y)
 
-        vykresli_text(screen, f"{round(kolo.rear_wheel.get_speed().x / dt)}", (255,255,255), (300,300))
         rychlost = (kolo.rear_wheel.get_speed().x / dt)
         uhel_rucicky = vykresli_ui(screen, kolo_interpolace.rear_axel.get_position().x, kolo_interpolace.energie, kolo_interpolace.rear_axel.get_position().x, rychlost, pygame.time.get_ticks() - start_cas, uhel_rucicky)
         vykresli_text(screen, f"Money: {config.prachy}", (255, 215, 0), (22, 360), velikost=50)

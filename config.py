@@ -57,10 +57,7 @@ def uloz_config():
         "fps": fps,
         "fps_limit": fps_limit,
         "fullscreen": fullscreen,
-        "vybrane_kolo": vybrane_kolo,
-        "vybrane_jidlo": vybrane_jidlo,
         "prachy": prachy,
-        "ztrata_energie": ztrata_energie
     }
     with open(config_file, "w") as f:
         json.dump(data, f)
@@ -77,9 +74,6 @@ def nacti_config():
             fps = data.get("fps", fps)
             fps_limit = data.get("fps_limit", fps_limit)
             fullscreen = data.get("fullscreen", fullscreen)
-            vybrane_kolo = data.get("vybrane_kolo", vybrane_kolo)
-            vybrane_jidlo = data.get("vybrane_jidlo", vybrane_jidlo)
             prachy = data.get("prachy", prachy)
-            ztrata_energie = data.get("ztrata_energie", ztrata_energie)
 
 nacti_config()

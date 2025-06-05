@@ -36,7 +36,7 @@ jidla = [
     ("Protein bar", pygame.image.load("img/tycinka.png").convert_alpha(), 50),
     ("Chicken", pygame.image.load("img/kure.png").convert_alpha(), 100)
 ]
-jidlo_delka = 80
+jidlo_delka = 100
 for i in range(len(jidla)):
     delka = jidla[i][1].get_width()
     k = jidlo_delka / delka
@@ -97,11 +97,11 @@ def menu_vylepseni():
     bezi = True
     while bezi:
         screen.blit(obloha_img, (0, 0))
-        vykresli_text(screen, "upgraderades", (0,0,0), (100,100))
+        vykresli_text(screen, "Upgrades", (0, 0, 0), (300, 100), "center", velikost=125)
 
 
-        leva_sipka = pygame.Rect(100, 400, 120, 150)
-        prava_sipka = pygame.Rect(220 + 2 * margin_x + kolo_delka, 400, 120, 150)
+        leva_sipka = pygame.Rect(200, 400, 120, 150)
+        prava_sipka = pygame.Rect(320 + 2 * margin_x + kolo_delka, 400, 120, 150)
         pygame.draw.polygon(screen, (100, 100, 100), [(leva_sipka.right, leva_sipka.top), (leva_sipka.left, leva_sipka.centery), (leva_sipka.right, leva_sipka.bottom)])
         pygame.draw.polygon(screen, (100, 100, 100), [(prava_sipka.left, prava_sipka.top), (prava_sipka.right, prava_sipka.centery), (prava_sipka.left, prava_sipka.bottom)])
 
@@ -123,10 +123,10 @@ def menu_vylepseni():
             barva = (255,220,220)
             vykresli_tlacitko(screen, f"Buy: {config.ceny_kol[id_kola]} $", tlacitko_kolo, barva_pozadi=barva, barva_textu=(0,0,0))
 
-        upgrade_names = ["Speed", "Endurance"]
+        upgrade_jmena = ["Speed", "Endurance"]
         upgrade_rects = []
         for upgrade_idx in range(2):
-            upgrade_name = upgrade_names[upgrade_idx]
+            upgrade_jmeno = upgrade_jmena[upgrade_idx]
             upgrade_level = config.kola_upgrady[id_kola][upgrade_idx]
             upgrade_rect = pygame.Rect(kolo_rect.x, kolo_rect.bottom + 100 + upgrade_idx*60, kolo_rect.width, 50)
             upgrade_rects.append(upgrade_rect)
@@ -137,7 +137,7 @@ def menu_vylepseni():
             if upgrade_level == config.max_upgrade:
                 vykresli_tlacitko(
                     screen,
-                    f"{upgrade_name}: Maxed",
+                    f"{upgrade_jmeno}: Maxed",
                     upgrade_rect,
                     barva_pozadi=barva,
                     barva_textu=(0,0,0)
@@ -145,7 +145,7 @@ def menu_vylepseni():
             else:
                 vykresli_tlacitko(
                 screen,
-                f"{upgrade_name}: {upgrade_level}/{config.max_upgrade} {config.cena_upgrade[upgrade_idx]}$",
+                f"{upgrade_jmeno}: {upgrade_level}/{config.max_upgrade} {config.cena_upgrade[upgrade_idx]}$",
                 upgrade_rect,
                 barva_pozadi=barva,
                 barva_textu=(0,0,0)
@@ -154,8 +154,8 @@ def menu_vylepseni():
         jidlo_rects = []
         for i in range(len(jidla)):
             nazev, img, energie = jidla[i]
-            y = 250 + i * 180
-            rect = pygame.Rect(1200, y, 260, 140)
+            y = 150 + i * 250
+            rect = pygame.Rect(1200, y, 500, 200)
             jidlo_rects.append(rect)
             if i == 0:
                 barva = (255,255,180)
@@ -164,10 +164,12 @@ def menu_vylepseni():
             else:
                 barva = (255,220,220)
             pygame.draw.rect(screen, barva, rect)
-            screen.blit(img, (rect.x + 10, rect.y + 30))
-            vykresli_text(screen, nazev, (0,0,0), (rect.x + 110, rect.y + 25), "left", 38)
-            vykresli_text(screen, f"Energy: {energie}", (0,0,0), (rect.x + 110, rect.y + 70), "left", 30)
-            tlacitko = pygame.Rect(rect.x, rect.bottom-35, rect.width, 35)
+            pygame.draw.rect(screen, (0,0,0), rect, 2)
+            img_rect = img.get_rect()
+            screen.blit(img, (rect.x + margin_x/2.2, rect.y + (rect.height - img_rect.height) // 2))
+            vykresli_text(screen, nazev, (0,0,0), (rect.x + 35 + img_rect.width, rect.y + 60), velikost=38)
+            vykresli_text(screen, f"Energy: {energie}", (0,0,0), (rect.x + 35 + img_rect.width, rect.y + 100), velikost=30)
+            tlacitko = pygame.Rect(rect.right - 200, rect.y, 200, rect.height)
             if config.jidla_odemcena[i]:
                 if config.vybrane_jidlo == i:
                     barva_pozadi = (180,255,180)
@@ -178,11 +180,17 @@ def menu_vylepseni():
                 else:
                     vykresli_tlacitko(screen, "Select", tlacitko, barva_pozadi=barva_pozadi, barva_textu=(0,0,0))
             else:
-                vykresli_tlacitko(screen, f"Buy: {config.ceny_jidel[i]} $", tlacitko, barva_pozadi=(255,220,220), barva_textu=(0,0,0))
+                vykresli_tlacitko(screen, f"Buy: {config.ceny_jidel[i]} $", tlacitko, barva_pozadi=(255, 133, 113), barva_textu=(0,0,0))
 
-        vykresli_text(screen, f"Money: {config.prachy}", (255, 215, 0), (600, 80), "center", 60)
-        tlacitko_zpet = pygame.Rect(50, 900, 200, 100)
-        vykresli_tlacitko(screen, "Back", tlacitko_zpet, barva_pozadi=(255, 100, 100), barva_textu=(0,0,0))
+        vykresli_text(screen, f"Money: {config.prachy}", (255, 215, 0), (700, 75), velikost=70)
+        tlacitko_zpet = pygame.Rect(30, 950,400, 100)
+        if not config.kola_odemcena[config.vybrane_kolo]:
+            vykresli_tlacitko(screen, "Select unlocked bike", tlacitko_zpet, barva_pozadi=(180, 180, 180), barva_textu=(120,120,120))
+            zpet_povoleno = False
+        else:
+            vykresli_tlacitko(screen, "Back", tlacitko_zpet, barva_pozadi=(255, 100, 100), barva_textu=(0,0,0))
+            zpet_povoleno = True
+
 
         pygame.display.flip()
         for event in pygame.event.get():
@@ -220,11 +228,12 @@ def menu_vylepseni():
                             config.jidla_odemcena[i] = True
                             config.vybrane_jidlo = i
 
-                if tlacitko_zpet.collidepoint(event.pos):
+                if tlacitko_zpet.collidepoint(event.pos) and zpet_povoleno:
                     config.uloz_config()
                     bezi = False
+
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
+                if zpet_povoleno:
                     config.uloz_config()
                     bezi = False
 
