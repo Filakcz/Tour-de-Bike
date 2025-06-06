@@ -47,6 +47,15 @@ zamek = pygame.image.load("img/zamek.png").convert_alpha()
 zamek_sirka = zamek.get_width()
 zamek_vyska = zamek.get_height()
 
+
+mapy = [
+    ("Earth hills", pygame.image.load("img/mapy/default.png").convert()),
+    ("Moon", pygame.image.load("img/mapy/mesic.png").convert()),
+    ("Mountains", pygame.image.load("img/mapy/hory.png").convert()),
+    # highway
+    # ("Night", pygame.image.load("img/mapy/mountains.png").convert())
+]
+
 #vybrane_kolo = 0 # 0=silnicka, 1=hardtail, 2=celopero
 #vybrane_jidlo = 0 # 0=banan, 1=tycinka, 2=kure
 
@@ -80,9 +89,11 @@ def menu():
                 quit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if tlacitko_start.collidepoint(event.pos):
-                    nastav_kolo(config.vybrane_kolo)
-                    config.nastav_upgrady()
-                    spust_hru()
+                    vyber = menu_mapy()
+                    if vyber is not None:
+                        nastav_kolo(config.vybrane_kolo)
+                        config.nastav_upgrady()
+                        spust_hru()
                 elif tlacitko_vylepseni.collidepoint(event.pos):
                     menu_vylepseni()
                 elif tlacitko_nastaveni.collidepoint(event.pos):
@@ -92,12 +103,52 @@ def menu():
                     pygame.quit()
                     quit()
 
+def menu_mapy():
+    bezi = True
+    while bezi:
+        screen.blit(obloha_img, (0,0))
+        vykresli_text(screen, "Select Map", (0, 0, 0), (config.obrazovka_sirka//2, 100), "center", velikost=100, podrtzeny=True)
+
+        leva_sipka = pygame.Rect(400, 400, 120, 150)
+        prava_sipka = pygame.Rect(1400, 400, 120, 150)
+        pygame.draw.polygon(screen, (100, 100, 100), [(leva_sipka.right, leva_sipka.top), (leva_sipka.left, leva_sipka.centery), (leva_sipka.right, leva_sipka.bottom)])
+        pygame.draw.polygon(screen, (100, 100, 100), [(prava_sipka.left, prava_sipka.top), (prava_sipka.right, prava_sipka.centery), (prava_sipka.left, prava_sipka.bottom)])
+
+        nazev, img = mapy[config.vybrana_mapa]
+        img = pygame.transform.smoothscale(img, (600, 400))
+        screen.blit(img, (config.obrazovka_sirka//2 - 300, 250))
+        vykresli_text(screen, nazev, (0, 0, 0), (config.obrazovka_sirka//2, 700), "center", 80)
+
+        tlacitko_start = pygame.Rect(config.obrazovka_sirka//2 - 200, 800, 400, 100)
+        vykresli_tlacitko(screen, "Start", tlacitko_start, barva_pozadi=(180,255,180), barva_textu=(0,0,0))
+
+        tlacitko_zpet = pygame.Rect(50, 900, 250, 80)
+        vykresli_tlacitko(screen, "Back", tlacitko_zpet, barva_pozadi=(255, 100, 100), barva_textu=(0,0,0))
+
+        pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                config.uloz_config()
+                pygame.quit()
+                quit()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if leva_sipka.collidepoint(event.pos):
+                    config.vybrana_mapa = (config.vybrana_mapa - 1) % len(mapy)
+                elif prava_sipka.collidepoint(event.pos):
+                    config.vybrana_mapa = (config.vybrana_mapa + 1) % len(mapy)
+                elif tlacitko_start.collidepoint(event.pos):
+                    return config.vybrana_mapa
+                elif tlacitko_zpet.collidepoint(event.pos):
+                    return None
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return None
+
 def menu_vylepseni():
     bezi = True
     while bezi:
         screen.blit(obloha_img, (0, 0))
         vykresli_text(screen, "Upgrades", (0, 0, 0), (300, 100), "center", velikost=125, podrtzeny=True)
-
 
         leva_sipka = pygame.Rect(200, 400, 120, 150)
         prava_sipka = pygame.Rect(320 + 2 * margin_x + kolo_delka, 400, 120, 150)
@@ -122,6 +173,7 @@ def menu_vylepseni():
             barva = (255,220,220)
             vykresli_tlacitko(screen, f"{config.ceny_kol[id_kola]} $", tlacitko_kolo, barva_pozadi=barva, barva_textu=(0,0,0))
 
+        vykresli_text(screen, "Upgrades are separate for each bike", (0,0,0), (600,970))
 
         if not config.kola_odemcena[id_kola]:
             zamek_x = kolo_rect.x + (kolo_rect.width - zamek_sirka) // 2
@@ -316,7 +368,7 @@ def menu_nastaveni():
         slider_rect_sound = vykresli_slider(screen, 170, 300, config.volume_sound, "Sound volume:")
         slider_rect_music = vykresli_slider(screen, 245, 300, config.volume_music, "Music volume:")
 
-        checkbox_rect_potato = vykresli_zakliknuti(screen, 320, "Potato PC (disables stones and clouds):", config.potato_pc)
+        checkbox_rect_potato = vykresli_zakliknuti(screen, 320, "Potato PC (disables extra details):", config.potato_pc)
         checkbox_rect_fps = vykresli_zakliknuti(screen, 395, "Show FPS counter:", config.fps)
         slider_rect_fps_limit = vykresli_slider(screen, 470, 300, config.fps_limit, "FPS limit", 300, "FPS:")
         checkbox_rect_fullscreen = vykresli_zakliknuti(screen, 545, "Fullscreen:", config.fullscreen)

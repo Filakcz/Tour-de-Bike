@@ -46,6 +46,7 @@ GRAVITY = (0, 0.2)
 # generace
 krok = 10
 obtiznost_mapy = 10000 # nizsi tezsi
+vybrana_mapa = 0
 
 config_file = "config_save.json"
 
@@ -56,7 +57,6 @@ def uloz_config():
         "potato_pc": potato_pc,
         "fps": fps,
         "fps_limit": fps_limit,
-        "fullscreen": fullscreen,
         "prachy": prachy,
         "kola_odemcena": kola_odemcena,
         "jidla_odemcena": jidla_odemcena,
@@ -80,7 +80,6 @@ def nacti_config():
             potato_pc = data.get("potato_pc", potato_pc)
             fps = data.get("fps", fps)
             fps_limit = data.get("fps_limit", fps_limit)
-            fullscreen = data.get("fullscreen", fullscreen)
             prachy = data.get("prachy", prachy)
             kola_odemcena = data.get("kola_odemcena", kola_odemcena)
             jidla_odemcena = data.get("jidla_odemcena", jidla_odemcena)

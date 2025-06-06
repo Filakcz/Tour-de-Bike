@@ -12,10 +12,7 @@ import fyzika
 screen = pygame.display.set_mode((config.obrazovka_sirka, config.obrazovka_vyska))
 pygame.display.set_caption("Tour de Bike")
 
-barva_trava = (0, 154, 23)
 vyska_travy = 50
-barva_hlina = (120, 72, 0)
-barva_kamen = (80, 60, 40)
 
 FONTY = {}
 
@@ -165,7 +162,7 @@ def vykresli_ui(screen, km, energie, kolo_x, rychlost, cas, uhel_rucicky):
 
     return novy_uhel
 
-def vykresli_teren(screen, kamera_x, kamera_y, kaminky):
+def vykresli_teren(screen, kamera_x, kamera_y, kaminky, vybrana_mapa, barva_trava, barva_hlina, barva_kamen):
     
     body_trava = [[0, config.obrazovka_vyska]]
     body_hlina = [[0, config.obrazovka_vyska + vyska_travy]]
@@ -247,11 +244,14 @@ def vykresli_kolo(kolo, camera, rafek_img, kolo_img):
     uhel = (-180 / math.pi) * math.atan2(kolo.front_axel.position.y - kolo.rear_axel.position.y, kolo.front_axel.position.x - kolo.rear_axel.position.x)
     blit_rotate_bottom_left(screen, kolo_img, (int(center.x - camera.x), int(center.y - camera.y)), uhel)
 
-def vykresli_mraky(screen, kamera_x, kamera_y, mraky):
+def vykresli_mraky(screen, kamera_x, kamera_y, mraky, mapa):
     for m in mraky:
         x = int(m["x"] - kamera_x * m["parallax"])
         y = int(m["y"] - kamera_y * m["parallax"])
-        img = pygame.transform.smoothscale(mrak_img, (int(mrak_img.get_width() * m["velikost"]), int(mrak_img.get_height() * m["velikost"])))
+        if mapa == 1:
+            img = pygame.transform.smoothscale(hvezda_img, (int(hvezda_img.get_width() * m["velikost"]), int(hvezda_img.get_height() * m["velikost"])))
+        else:
+            img = pygame.transform.smoothscale(mrak_img, (int(mrak_img.get_width() * m["velikost"]), int(mrak_img.get_height() * m["velikost"])))
         if x < -img.get_width():
             m["x"] += config.obrazovka_sirka * 2 + img.get_width()
             x = int(m["x"] - kamera_x * m["parallax"])
@@ -357,8 +357,14 @@ tachometr_img = pygame.transform.smoothscale(tachometr_img, (400, 400))
 obloha_img = pygame.image.load("img/obloha.png").convert()
 obloha_img = pygame.transform.smoothscale(obloha_img, (config.obrazovka_sirka, config.obrazovka_vyska))
 
+obloha_mesic_img = pygame.image.load("img/mapy/mesic_pozadi.png").convert()
+obloha_img = pygame.transform.smoothscale(obloha_img, (config.obrazovka_sirka, config.obrazovka_vyska))
+
 mrak_img = pygame.image.load("img/mrak.png").convert_alpha()
 mrak_img = pygame.transform.smoothscale(mrak_img, (mrak_img.get_width() // 2, mrak_img.get_height() // 2))
+
+hvezda_img = pygame.image.load("img/mapy/hvezda.png").convert_alpha()
+hvezda_img = pygame.transform.smoothscale(hvezda_img, (hvezda_img.get_width() // 4, hvezda_img.get_height() // 4))
 
 rust_vzdalenosti = 200
 
@@ -378,6 +384,8 @@ def rotace_bodu(bod, pivot, uhel_stupne):
 def main():
     ram_obrazky = nahrat_obrazky(config.vybrane_kolo)
 
+    vybrana_mapa = config.vybrana_mapa
+    
     mraky = []
     if not config.potato_pc:
         for vrstva in range(3):
@@ -397,6 +405,21 @@ def main():
 
     kaminky = {}
 
+
+
+    if vybrana_mapa == 1:  # mesic
+        config.GRAVITY = (0, 0.1)
+    else:
+        config.GRAVITY = (0, 0.2)
+
+    if vybrana_mapa == 1:  # mesic
+        barva_trava = (166, 166, 166)
+        barva_hlina = (232, 232, 232)
+        barva_kamen = (200, 200, 200)
+    else:
+        barva_trava = (0, 154, 23)
+        barva_hlina = (120, 72, 0)
+        barva_kamen = (80, 60, 40)
 
     start_cas = pygame.time.get_ticks()
     bezi = True
@@ -592,11 +615,15 @@ def main():
         kolo_interpolace = kolo_predchozi.interpolate(kolo, alpha)
 
         # KRESLENI
-        screen.blit(obloha_img, (0, 0))
+        if vybrana_mapa == 1:
+            screen.blit(obloha_mesic_img, (0,0))
+        else:
+            screen.blit(obloha_img, (0, 0))
         if not config.potato_pc:
-            vykresli_mraky(screen, camera.x, camera.y, mraky)
+            vykresli_mraky(screen, camera.x, camera.y, mraky, vybrana_mapa)
+
         vykresli_kolo(kolo_interpolace, camera, rafek_img, ram_obrazky[int(kolo_interpolace.animace_index)])
-        vykresli_teren(screen, camera.x, camera.y, kaminky)
+        vykresli_teren(screen, camera.x, camera.y, kaminky, vybrana_mapa, barva_trava, barva_hlina, barva_kamen)
 
         for mince in mince_predmety.copy():
             mince.vykresli(screen, camera.x, camera.y)

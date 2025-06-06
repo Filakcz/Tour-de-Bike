@@ -16,21 +16,38 @@ def nastav_kolo(typ):
         config.SUS_FRONT, config.SUS_REAR = 0.12, 0.12
         config.DAMP_FRONT, config.DAMP_REAR = -0.4, -0.4
 
-cache_hodnot = {}
+cache_hodnot0 = {}
+cache_hodnot1 = {}
 
 def generace_bod(x):
-  if x in cache_hodnot:
-    return cache_hodnot[x]
-  i = x / config.krok
-  obtiznost = 1 + (x / config.obtiznost_mapy)
-  y = (math.sin(i * 0.004) * (120 * obtiznost)
-        + math.sin(i * 0.025 + math.cos(i * 0.002)) * (60 * obtiznost)
-        + math.sin(i * 0.13 + math.cos(i * 0.03)) * (18 + obtiznost * 5)
-        + math.sin(i * 0.0025)
-        + math.cos(i * 0.7) * 2
-  )
-  cache_hodnot[x] = y
-  return y
+  if config.vybrana_mapa == 1:
+      if x in cache_hodnot1:
+            return cache_hodnot1[x]
+      i = x / config.krok
+      obtiznost = 1 + (x / config.obtiznost_mapy)
+      # Měsíc: plošší, více kráterů
+      y = (
+          math.sin(i * 0.002) * (200 * obtiznost)   # menší základní vlny
+          + math.sin(i * 0.05 + math.cos(i * 0.01)) * (50 * obtiznost)  # menší krátery
+          + math.sin(i * 0.25 + math.cos(i * 0.03)) * (4 + obtiznost)   # menší detaily
+          + math.sin(i * 0.015) * 20   # menší vlny
+          + math.cos(i * 0.2) * 10     # menší krátery
+      )
+      cache_hodnot1[x] = y
+      return y
+  else:
+    if x in cache_hodnot0:
+      return cache_hodnot0[x]
+    i = x / config.krok
+    obtiznost = 1 + (x / config.obtiznost_mapy)
+    y = (math.sin(i * 0.004) * (120 * obtiznost)
+          + math.sin(i * 0.025 + math.cos(i * 0.002)) * (60 * obtiznost)
+          + math.sin(i * 0.13 + math.cos(i * 0.03)) * (18 + obtiznost * 5)
+          + math.sin(i * 0.0025)
+          + math.cos(i * 0.7) * 2
+    )
+    cache_hodnot0[x] = y
+    return y
 
 class Vector:
   def __init__(self, x, y):
