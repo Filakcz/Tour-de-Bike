@@ -54,11 +54,7 @@ zamek_vyska = zamek.get_height()
 margin_x = 50
 
 # TODO!!!
-# procentualne na obrazovce vykreslovat - vybrat rozliseni a fullscren
-# nastaveni - potato pc, zvuk a musika volume, zobrazeni FPS   
-# ulozeni a nacteni hry
-# vylepseni kola - rychlost, mensi ztrata energie, 
-# kupovani kol a lepsich jidel
+# procentualne na obrazovce vykreslovat?
 # ruzne mapy (mesic, dalnice, hory. noc)
 # hezci ui
 # hudba, zvuk
@@ -85,7 +81,7 @@ def menu():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if tlacitko_start.collidepoint(event.pos):
                     nastav_kolo(config.vybrane_kolo)
-                    
+                    config.nastav_upgrady()
                     spust_hru()
                 elif tlacitko_vylepseni.collidepoint(event.pos):
                     menu_vylepseni()
@@ -146,7 +142,7 @@ def menu_vylepseni():
             if upgrade_level == config.max_upgrade:
                 vykresli_tlacitko(
                     screen,
-                    f"{upgrade_jmeno}: Maxed",
+                    f"{upgrade_jmeno}: MAXED",
                     upgrade_rect,
                     barva_pozadi=barva,
                     barva_textu=(0,0,0)

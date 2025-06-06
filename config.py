@@ -60,7 +60,9 @@ def uloz_config():
         "prachy": prachy,
         "kola_odemcena": kola_odemcena,
         "jidla_odemcena": jidla_odemcena,
-        "kola_upgrady": kola_upgrady
+        "kola_upgrady": kola_upgrady,
+        "vybrane_kolo": vybrane_kolo,
+        "vybrane_jidlo": vybrane_jidlo
     }
     with open(config_file, "w") as f:
         json.dump(data, f)
@@ -83,5 +85,19 @@ def nacti_config():
             kola_odemcena = data.get("kola_odemcena", kola_odemcena)
             jidla_odemcena = data.get("jidla_odemcena", jidla_odemcena)
             kola_upgrady = data.get("kola_upgrady", kola_upgrady)
+            vybrane_kolo = data.get("vybrane_kolo", vybrane_kolo)
+            vybrane_jidlo = data.get("vybrane_jidlo", vybrane_jidlo)
+    
+    if not kola_odemcena[vybrane_kolo]:
+        vybrane_kolo = 0
+    if not jidla_odemcena[vybrane_jidlo]:
+        vybrane_jidlo = 0
+
+def nastav_upgrady():
+    global SLAPANI_FROCE, ztrata_energie
+    zaklad_slapani = 1
+    zaklad_endurance = 0.05
+    SLAPANI_FROCE = zaklad_slapani + kola_upgrady[vybrane_kolo][0] * 0.2
+    ztrata_energie = zaklad_endurance * (1 - 0.15 * kola_upgrady[vybrane_kolo][1])
 
 nacti_config()
