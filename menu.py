@@ -43,6 +43,9 @@ for i in range(len(jidla)):
 
     jidla[i] = (jidla[i][0], pygame.transform.smoothscale(jidla[i][1], (k * delka, k * jidla[i][1].get_height())), jidla[i][2])
 
+zamek = pygame.image.load("img/zamek.png").convert_alpha()
+zamek_sirka = zamek.get_width()
+zamek_vyska = zamek.get_height()
 
 #vybrane_kolo = 0 # 0=silnicka, 1=hardtail, 2=celopero
 #vybrane_jidlo = 0 # 0=banan, 1=tycinka, 2=kure
@@ -97,7 +100,7 @@ def menu_vylepseni():
     bezi = True
     while bezi:
         screen.blit(obloha_img, (0, 0))
-        vykresli_text(screen, "Upgrades", (0, 0, 0), (300, 100), "center", velikost=125)
+        vykresli_text(screen, "Upgrades", (0, 0, 0), (300, 100), "center", velikost=125, podrtzeny=True)
 
 
         leva_sipka = pygame.Rect(200, 400, 120, 150)
@@ -121,7 +124,13 @@ def menu_vylepseni():
             vykresli_tlacitko(screen, "Selected", tlacitko_kolo, barva_pozadi=barva, barva_textu=(0,0,0))
         else:
             barva = (255,220,220)
-            vykresli_tlacitko(screen, f"Buy: {config.ceny_kol[id_kola]} $", tlacitko_kolo, barva_pozadi=barva, barva_textu=(0,0,0))
+            vykresli_tlacitko(screen, f"{config.ceny_kol[id_kola]} $", tlacitko_kolo, barva_pozadi=barva, barva_textu=(0,0,0))
+
+
+        if not config.kola_odemcena[id_kola]:
+            zamek_x = kolo_rect.x + (kolo_rect.width - zamek_sirka) // 2
+            zamek_y = kolo_rect.y + (kolo_rect.height - zamek_vyska) // 2
+            screen.blit(zamek, (zamek_x, zamek_y))
 
         upgrade_jmena = ["Speed", "Endurance"]
         upgrade_rects = []
@@ -166,7 +175,9 @@ def menu_vylepseni():
             pygame.draw.rect(screen, barva, rect)
             pygame.draw.rect(screen, (0,0,0), rect, 2)
             img_rect = img.get_rect()
-            screen.blit(img, (rect.x + margin_x/2.2, rect.y + (rect.height - img_rect.height) // 2))
+            img_x = rect.x + margin_x / 2.2
+            img_y = rect.y + (rect.height - img_rect.height) // 2
+            screen.blit(img, (img_x, img_y))
             vykresli_text(screen, nazev, (0,0,0), (rect.x + 35 + img_rect.width, rect.y + 60), velikost=38)
             vykresli_text(screen, f"Energy: {energie}", (0,0,0), (rect.x + 35 + img_rect.width, rect.y + 100), velikost=30)
             tlacitko = pygame.Rect(rect.right - 200, rect.y, 200, rect.height)
@@ -180,9 +191,14 @@ def menu_vylepseni():
                 else:
                     vykresli_tlacitko(screen, "Select", tlacitko, barva_pozadi=barva_pozadi, barva_textu=(0,0,0))
             else:
-                vykresli_tlacitko(screen, f"Buy: {config.ceny_jidel[i]} $", tlacitko, barva_pozadi=(255, 133, 113), barva_textu=(0,0,0))
+                vykresli_tlacitko(screen, f"{config.ceny_jidel[i]} $", tlacitko, barva_pozadi=(255, 133, 113), barva_textu=(0,0,0))
+                scale = (jidlo_delka - 20) / zamek_sirka
+                zamek_small = pygame.transform.smoothscale(zamek, (zamek_sirka * scale, zamek_vyska * scale))
+                zamek_x = img_x + ((img_rect.width - zamek_sirka * scale)/2)
+                zamek_y = img_y + ((img_rect.height - zamek_vyska * scale)/2)
+                screen.blit(zamek_small, (zamek_x, zamek_y))
 
-        vykresli_text(screen, f"Money: {config.prachy}", (255, 215, 0), (700, 75), velikost=70)
+        vykresli_text(screen, f"{config.prachy} $", (255, 215, 0), (700, 75), velikost=70)
         tlacitko_zpet = pygame.Rect(30, 950,400, 100)
         if not config.kola_odemcena[config.vybrane_kolo]:
             vykresli_tlacitko(screen, "Select unlocked bike", tlacitko_zpet, barva_pozadi=(180, 180, 180), barva_textu=(120,120,120))
@@ -233,7 +249,7 @@ def menu_vylepseni():
                     bezi = False
 
             elif event.type == pygame.KEYDOWN:
-                if zpet_povoleno:
+                if zpet_povoleno and event.key == pygame.K_ESCAPE:
                     config.uloz_config()
                     bezi = False
 
@@ -299,7 +315,7 @@ def menu_nastaveni():
 
     while bezi:
         screen.blit(obloha_img, (0, 0))
-        vykresli_text(screen, "Settings", (0, 0, 0), (config.obrazovka_sirka//2, 100), "center", velikost=125)
+        vykresli_text(screen, "Settings", (0, 0, 0), (config.obrazovka_sirka//2, 100), "center", velikost=125, podrtzeny=True)
 
         slider_rect_sound = vykresli_slider(screen, 170, 300, config.volume_sound, "Sound volume:")
         slider_rect_music = vykresli_slider(screen, 245, 300, config.volume_music, "Music volume:")
@@ -380,6 +396,9 @@ def menu_nastaveni():
                     config.prachy = 0
                     config.vybrane_kolo = 0
                     config.vybrane_jidlo = 0
+                    config.kola_odemcena = [True, False, False]
+                    config.jidla_odemcena = [True, False, False]
+                    config.kola_upgrady = [[0, 0], [0, 0], [0, 0]]
                     zprava = "Stats reset successfully!"
                     zprava_cas = pygame.time.get_ticks() / 1000
 

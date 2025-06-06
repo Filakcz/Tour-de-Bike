@@ -57,9 +57,11 @@ def get_font(velikost, font):
         FONTY[klic] = pygame.font.SysFont(font, velikost)
     return FONTY[klic]
 
-def vykresli_text(surf, text, barva, pozice, zarovnat="left", velikost=50, font="Arial"):
-    font = get_font(velikost,font)
-    text_surface = font.render(text, True, barva)
+def vykresli_text(surf, text, barva, pozice, zarovnat="left", velikost=50, font="Arial", bold=False, podrtzeny=False):
+    pismo = get_font(velikost,font)
+    pismo.set_bold(bold)
+    pismo.set_underline(podrtzeny)
+    text_surface = pismo.render(text, True, barva)
     text_rect = text_surface.get_rect()
     if zarovnat == "left":
         text_rect.topleft = pozice
@@ -603,7 +605,7 @@ def main():
 
         rychlost = (kolo.rear_wheel.get_speed().x / dt)
         uhel_rucicky = vykresli_ui(screen, kolo_interpolace.rear_axel.get_position().x, kolo_interpolace.energie, kolo_interpolace.rear_axel.get_position().x, rychlost, pygame.time.get_ticks() - start_cas, uhel_rucicky)
-        vykresli_text(screen, f"Money: {config.prachy}", (255, 215, 0), (22, 360), velikost=50)
+        vykresli_text(screen, f"{config.prachy} $", (255, 215, 0), (22, 360), velikost=50)
 
         if config.fps:
             fps = clock.get_fps()

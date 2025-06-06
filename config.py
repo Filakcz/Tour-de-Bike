@@ -58,6 +58,9 @@ def uloz_config():
         "fps_limit": fps_limit,
         "fullscreen": fullscreen,
         "prachy": prachy,
+        "kola_odemcena": kola_odemcena,
+        "jidla_odemcena": jidla_odemcena,
+        "kola_upgrady": kola_upgrady
     }
     with open(config_file, "w") as f:
         json.dump(data, f)
@@ -65,6 +68,8 @@ def uloz_config():
 def nacti_config():
     global volume_sound, volume_music, potato_pc, fps, fps_limit, fullscreen
     global vybrane_kolo, vybrane_jidlo, prachy, ztrata_energie
+    global kola_odemcena, jidla_odemcena, kola_upgrady
+
     if os.path.exists(config_file):
         with open(config_file, "r") as f:
             data = json.load(f)
@@ -75,5 +80,8 @@ def nacti_config():
             fps_limit = data.get("fps_limit", fps_limit)
             fullscreen = data.get("fullscreen", fullscreen)
             prachy = data.get("prachy", prachy)
+            kola_odemcena = data.get("kola_odemcena", kola_odemcena)
+            jidla_odemcena = data.get("jidla_odemcena", jidla_odemcena)
+            kola_upgrady = data.get("kola_upgrady", kola_upgrady)
 
 nacti_config()
