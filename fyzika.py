@@ -1,5 +1,3 @@
-# Ondrejek potahal
-
 import math
 import pygame
 import config
@@ -18,23 +16,53 @@ def nastav_kolo(typ):
 
 cache_hodnot0 = {}
 cache_hodnot1 = {}
+cache_hodnot2 = {}
+cache_hodnot3 = {}
 
 def generace_bod(x):
-  if config.vybrana_mapa == 1:
+  mapa = config.vybrana_mapa 
+  if mapa == 1:
       if x in cache_hodnot1:
             return cache_hodnot1[x]
       i = x / config.krok
       obtiznost = 1 + (x / config.obtiznost_mapy)
-      # Měsíc: plošší, více kráterů
       y = (
-          math.sin(i * 0.002) * (200 * obtiznost)   # menší základní vlny
-          + math.sin(i * 0.05 + math.cos(i * 0.01)) * (50 * obtiznost)  # menší krátery
-          + math.sin(i * 0.25 + math.cos(i * 0.03)) * (4 + obtiznost)   # menší detaily
-          + math.sin(i * 0.015) * 20   # menší vlny
-          + math.cos(i * 0.2) * 10     # menší krátery
+          math.sin(i * 0.002) * (200 * obtiznost)   
+          + math.sin(i * 0.05 + math.cos(i * 0.01)) * (50 * obtiznost)  
+          + math.sin(i * 0.25 + math.cos(i * 0.03)) * (4 + obtiznost) 
+          + math.sin(i * 0.015) * 20 
+          + math.cos(i * 0.2) * 10     
       )
       cache_hodnot1[x] = y
       return y
+  elif mapa == 2:
+        if x in cache_hodnot2:
+            return cache_hodnot2[x]
+        i = x / config.krok
+        obtiznost = 1 + (x / config.obtiznost_mapy)
+        y = (
+            math.sin(i * 0.002) * (1000 * obtiznost)   
+            + math.sin(i * 0.05) * (50 * obtiznost)  
+            + math.sin(i * 0.25) * (4 + obtiznost) 
+            + math.sin(i * 0.015) * 20 
+            + math.cos(i * 0.2) * 10 
+        )
+        cache_hodnot2[x] = y
+        return y
+  
+  elif mapa == 3:
+        if x in cache_hodnot3:
+            return cache_hodnot3[x]
+        i = x / config.krok
+        obtiznost = 1 + (x / config.obtiznost_mapy)
+        y = (
+            math.sin(i * 0.012) * (400 * obtiznost)    
+            + math.sin(i * 0.07) * (150 * obtiznost)   
+                  
+        )
+        cache_hodnot3[x] = y
+        return y
+
   else:
     if x in cache_hodnot0:
       return cache_hodnot0[x]

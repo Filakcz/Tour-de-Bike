@@ -132,7 +132,7 @@ def vykresli_ui(screen, km, energie, kolo_x, rychlost, cas, uhel_rucicky):
     stred_x = 250
     stred_y = 845
     delka_rucicky = 170
-    cilovy_uhel = -220 + (abs(rychlost) / 1500) * 262
+    cilovy_uhel = -220 + (abs(rychlost) / 3000) * 262
 
     novy_uhel = uhel_rucicky + (cilovy_uhel - uhel_rucicky) * 0.15
 
@@ -191,8 +191,7 @@ def vykresli_teren(screen, kamera_x, kamera_y, kaminky, vybrana_mapa, barva_trav
             body_hrana.append((x_obrazovka, y))
 
         if not(config.potato_pc) and kaminky is not None and x not in kaminky:
-            y_real = fyzika.generace_bod(x)
-            y_hlina = y_real + vyska_travy
+            y_hlina = hlina_vec.y + kamera_y
             segment_kaminky = [
                 (random.randint(x, x + config.krok),
                  random.randint(int(y_hlina + 30), int(y_hlina + config.obrazovka_vyska + 30)),
@@ -416,6 +415,14 @@ def main():
         barva_trava = (166, 166, 166)
         barva_hlina = (232, 232, 232)
         barva_kamen = (200, 200, 200)
+    elif vybrana_mapa == 2: # dalnice
+        barva_trava = (60, 60, 60)      
+        barva_hlina = (100, 100, 100)   
+        barva_kamen = (180, 180, 180)
+    elif vybrana_mapa == 3: # duny
+        barva_trava = (242, 222, 163) 
+        barva_hlina = (210, 180, 100)   
+        barva_kamen = (194, 178, 128) 
     else:
         barva_trava = (0, 154, 23)
         barva_hlina = (120, 72, 0)
@@ -610,7 +617,7 @@ def main():
 
             accumulator -= dt
 
-        # INTERPOLACE
+        # # INTERPOLACE
         alpha = accumulator / dt
         kolo_interpolace = kolo_predchozi.interpolate(kolo, alpha)
 

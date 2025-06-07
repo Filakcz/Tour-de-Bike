@@ -51,8 +51,8 @@ zamek_vyska = zamek.get_height()
 mapy = [
     ("Earth hills", pygame.image.load("img/mapy/default.png").convert()),
     ("Moon", pygame.image.load("img/mapy/mesic.png").convert()),
-    ("Mountains", pygame.image.load("img/mapy/hory.png").convert()),
-    # highway
+    ("Highway", pygame.image.load("img/mapy/dalnice.png").convert()),
+    ("Sand dunes", pygame.image.load("img/mapy/pisecne_duny.png").convert()),
     # ("Night", pygame.image.load("img/mapy/mountains.png").convert())
 ]
 
