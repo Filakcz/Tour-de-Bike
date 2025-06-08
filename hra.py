@@ -162,15 +162,15 @@ def vykresli_ui(screen, km, energie, kolo_x, rychlost, cas, uhel_rucicky):
 
     return novy_uhel
 
-def vykresli_teren(screen, kamera_x, kamera_y, kaminky, vybrana_mapa, barva_trava, barva_hlina, barva_kamen):
+def vykresli_teren(screen, kamera_x, kamera_y, kaminky, barva_trava, barva_hlina, barva_kamen):
     
     body_trava = [[0, config.obrazovka_vyska]]
-    body_hlina = [[0, config.obrazovka_vyska + vyska_travy]]
+    body_hlina = [[0, config.obrazovka_vyska]]
     body_hrana = []
 
     x_svet = kamera_x - (kamera_x % config.krok)
     x = int(x_svet)
-
+    body_trava.append([0, fyzika.generace_bod(x)-kamera_y])
     klice_na_smazani = []
 
     while x < kamera_x + config.obrazovka_sirka + 2 * config.krok:
@@ -190,15 +190,18 @@ def vykresli_teren(screen, kamera_x, kamera_y, kaminky, vybrana_mapa, barva_trav
             body_hlina.append([hlina_vec.x, hlina_vec.y])
             body_hrana.append((x_obrazovka, y))
 
-        if not(config.potato_pc) and kaminky is not None and x not in kaminky:
-            y_hlina = hlina_vec.y + kamera_y
-            segment_kaminky = [
-                (random.randint(x, x + config.krok),
-                 random.randint(int(y_hlina + 30), int(y_hlina + config.obrazovka_vyska + 30)),
-                 random.randint(1, 4))
-                for _ in range(10)
-            ]
-            kaminky[x] = segment_kaminky
+            kx = int(hlina_vec.x + kamera_x)
+            if not(config.potato_pc) and kaminky is not None and kx not in kaminky:
+                ky = hlina_vec.y + kamera_y
+                segment_kaminky = [
+                    (
+                        random.randint(kx,kx+config.krok),
+                        random.randint(int(ky+20),int(ky+config.obrazovka_vyska + 20)),
+                        random.randint(1, 5)
+                    )
+                    for _ in range(5)
+                ]
+                kaminky[kx] = segment_kaminky
 
         x += config.krok
 
@@ -260,6 +263,7 @@ def vykresli_mraky(screen, kamera_x, kamera_y, mraky, mapa):
         screen.blit(img, (x, y))
 
 def pause_menu(screen):
+    config.uloz_config()
     paused = True
     posledni_snimek = screen.copy()
     pokracovat_rect = pygame.Rect(screen.get_width()//2 - 200, 400, 400, 100)
@@ -294,6 +298,7 @@ def pause_menu(screen):
                     return "menu"
 
 def konec_menu(screen, km_ujet):
+    config.uloz_config()
     konec = True
     posledni_snimek = screen.copy()
     restart_rect = pygame.Rect(screen.get_width()//4 - 200, 550, 400, 100)
@@ -422,7 +427,7 @@ def main():
     elif vybrana_mapa == 3: # duny
         barva_trava = (242, 222, 163) 
         barva_hlina = (210, 180, 100)   
-        barva_kamen = (194, 178, 128) 
+        barva_kamen = (153, 140, 101)
     else:
         barva_trava = (0, 154, 23)
         barva_hlina = (120, 72, 0)
@@ -630,7 +635,7 @@ def main():
             vykresli_mraky(screen, camera.x, camera.y, mraky, vybrana_mapa)
 
         vykresli_kolo(kolo_interpolace, camera, rafek_img, ram_obrazky[int(kolo_interpolace.animace_index)])
-        vykresli_teren(screen, camera.x, camera.y, kaminky, vybrana_mapa, barva_trava, barva_hlina, barva_kamen)
+        vykresli_teren(screen, camera.x, camera.y, kaminky, barva_trava, barva_hlina, barva_kamen)
 
         for mince in mince_predmety.copy():
             mince.vykresli(screen, camera.x, camera.y)
@@ -657,7 +662,7 @@ def main():
         pygame.draw.rect(screen, cara_barva, (x1, y, cara_sirka, cara_vyska), border_radius=6)
         pygame.draw.rect(screen, cara_barva, (x2, y, cara_sirka, cara_vyska), border_radius=6)
 
-        camera = fyzika.lerp(camera, kolo_interpolace.rear_axel.position - Vector(-config.BIKE_LENGTH / 2 + config.obrazovka_sirka/2, config.obrazovka_vyska/1.5), 0.1)
+        camera = fyzika.lerp(camera, kolo_interpolace.rear_axel.position - Vector(-config.BIKE_LENGTH / 2 + config.obrazovka_sirka/2, config.obrazovka_vyska/1.6), 0.1)
         clock.tick(int(30 + config.fps_limit * 240))
         pygame.display.flip()
         

@@ -62,14 +62,15 @@ def uloz_config():
         "jidla_odemcena": jidla_odemcena,
         "kola_upgrady": kola_upgrady,
         "vybrane_kolo": vybrane_kolo,
-        "vybrane_jidlo": vybrane_jidlo
+        "vybrane_jidlo": vybrane_jidlo,
+        "vybrana_mapa": vybrana_mapa
     }
     with open(config_file, "w") as f:
         json.dump(data, f)
 
 def nacti_config():
     global volume_sound, volume_music, potato_pc, fps, fps_limit, fullscreen
-    global vybrane_kolo, vybrane_jidlo, prachy, ztrata_energie
+    global vybrane_kolo, vybrane_jidlo, prachy, ztrata_energie, vybrana_mapa
     global kola_odemcena, jidla_odemcena, kola_upgrady
 
     if os.path.exists(config_file):
@@ -86,6 +87,7 @@ def nacti_config():
             kola_upgrady = data.get("kola_upgrady", kola_upgrady)
             vybrane_kolo = data.get("vybrane_kolo", vybrane_kolo)
             vybrane_jidlo = data.get("vybrane_jidlo", vybrane_jidlo)
+            vybrana_mapa = data.get("vybrana_mapa", vybrana_mapa)
     
     if not kola_odemcena[vybrane_kolo]:
         vybrane_kolo = 0

@@ -64,7 +64,7 @@ margin_x = 50
 
 # TODO!!!
 # procentualne na obrazovce vykreslovat?
-# ruzne mapy (mesic, dalnice, hory. noc)
+# FIXNOUT KAMINKY
 # hezci ui
 # hudba, zvuk
 # optimalizace
@@ -93,6 +93,7 @@ def menu():
                     if vyber is not None:
                         nastav_kolo(config.vybrane_kolo)
                         config.nastav_upgrady()
+                        config.uloz_config()
                         spust_hru()
                 elif tlacitko_vylepseni.collidepoint(event.pos):
                     menu_vylepseni()
@@ -115,7 +116,7 @@ def menu_mapy():
         pygame.draw.polygon(screen, (100, 100, 100), [(prava_sipka.left, prava_sipka.top), (prava_sipka.right, prava_sipka.centery), (prava_sipka.left, prava_sipka.bottom)])
 
         nazev, img = mapy[config.vybrana_mapa]
-        img = pygame.transform.smoothscale(img, (600, 400))
+        img = pygame.transform.smoothscale(img, (608, 342))
         screen.blit(img, (config.obrazovka_sirka//2 - 300, 250))
         vykresli_text(screen, nazev, (0, 0, 0), (config.obrazovka_sirka//2, 700), "center", 80)
 
@@ -142,6 +143,7 @@ def menu_mapy():
                     return None
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
+                    config.uloz_config()
                     return None
 
 def menu_vylepseni():
