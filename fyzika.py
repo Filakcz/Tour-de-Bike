@@ -229,6 +229,9 @@ class Bike:
       return interp
 
   def tick(self, pressed_keys):
+        predni_touch = False
+        zadni_touch = False
+
         self.rear_axel.apply_gravity(Vector(*config.GRAVITY))
         self.front_axel.apply_gravity(Vector(*config.GRAVITY))
         self.rear_wheel.apply_gravity(Vector(*config.GRAVITY))
@@ -258,6 +261,7 @@ class Bike:
         # rear wheel
         touch_point = wheel_collision_check(self.rear_wheel, config.WHEEL_RADIUS)
         if touch_point is not None:
+            zadni_touch = True
             new_position = self.rear_wheel.get_position() + (self.rear_wheel.get_position() - touch_point).normalized() * (config.WHEEL_RADIUS - self.rear_wheel.get_position().distance_to(touch_point))
             self.rear_wheel.set_position(new_position)
             if self.energie > 0:
@@ -290,6 +294,7 @@ class Bike:
         # front wheel
         touch_point = wheel_collision_check(self.front_wheel, config.WHEEL_RADIUS)
         if touch_point is not None:
+            predni_touch = True
             new_position = self.front_wheel.get_position() + (self.front_wheel.get_position() - touch_point).normalized() * (config.WHEEL_RADIUS - self.front_wheel.get_position().distance_to(touch_point))
             self.front_wheel.set_position(new_position)
 
@@ -309,4 +314,4 @@ class Bike:
         self.rear_wheel.tick()
         self.front_wheel.tick()
 
-
+        return zadni_touch, predni_touch

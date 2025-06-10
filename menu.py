@@ -51,7 +51,7 @@ zamek_vyska = zamek.get_height()
 mapy = [
     ("Earth hills", pygame.image.load("img/mapy/default.png").convert()),
     ("Moon", pygame.image.load("img/mapy/mesic.png").convert()),
-    ("Highway", pygame.image.load("img/mapy/dalnice.png").convert()),
+    ("Highway D1", pygame.image.load("img/mapy/dalnice.png").convert()),
     ("Sand dunes", pygame.image.load("img/mapy/pisecne_duny.png").convert()),
     # ("Night", pygame.image.load("img/mapy/mountains.png").convert())
 ]
@@ -64,7 +64,6 @@ margin_x = 50
 
 # TODO!!!
 # procentualne na obrazovce vykreslovat?
-# FIXNOUT KAMINKY
 # hezci ui
 # hudba, zvuk
 # optimalizace

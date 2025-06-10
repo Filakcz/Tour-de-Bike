@@ -111,6 +111,23 @@ class Mince(pygame.sprite.Sprite):
     def get_position(self):
         return int(self.svet_x), int(self.svet_y)
 
+class Particle:
+    def __init__(self, pos):
+        self.x, self.y = pos
+        self.rychlost_x = random.uniform(-1, 1)
+        self.rychlost_y = random.uniform(-2, 0)
+        self.zivot = random.randint(20, 40)
+    
+    def update(self):
+        self.x += self.rychlost_x
+        self.y += self.rychlost_y
+        self.rychlost_y += 0.1  
+        self.zivot -= 1
+
+    def draw(self, surface, camera, barva):
+        if self.zivot > 0:
+            pygame.draw.circle(surface, barva, (int(self.x - camera.x), int(self.y - camera.y)),4)
+
 def vykresli_ui(screen, km, energie, kolo_x, rychlost, cas, uhel_rucicky):
     vykresli_text(screen, f"Distance: {round(km/1000,1)} km", (0, 0, 0), (22, 20))
 
@@ -132,7 +149,7 @@ def vykresli_ui(screen, km, energie, kolo_x, rychlost, cas, uhel_rucicky):
     stred_x = 250
     stred_y = 845
     delka_rucicky = 170
-    cilovy_uhel = -220 + (abs(rychlost) / 3000) * 262
+    cilovy_uhel = -220 + rychlost * 262
 
     novy_uhel = uhel_rucicky + (cilovy_uhel - uhel_rucicky) * 0.15
 
@@ -266,15 +283,15 @@ def pause_menu(screen):
     config.uloz_config()
     paused = True
     posledni_snimek = screen.copy()
-    pokracovat_rect = pygame.Rect(screen.get_width()//2 - 200, 400, 400, 100)
-    restart_rect = pygame.Rect(screen.get_width()//2 - 200, 550, 400, 100)
-    menu_rect = pygame.Rect(screen.get_width()//2 - 200, 700, 400, 100)
+    pokracovat_rect = pygame.Rect(config.obrazovka_sirka//2 - 200, 400, 400, 100)
+    restart_rect = pygame.Rect(config.obrazovka_sirka//2 - 200, 550, 400, 100)
+    menu_rect = pygame.Rect(config.obrazovka_sirka//2 - 200, 700, 400, 100)
     while paused:
         screen.blit(posledni_snimek, (0, 0))
-        pruhledna_cerna = pygame.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
+        pruhledna_cerna = pygame.Surface((config.obrazovka_sirka, config.obrazovka_vyska), pygame.SRCALPHA)
         pruhledna_cerna.fill((0, 0, 0, 140))
         screen.blit(pruhledna_cerna, (0, 0))
-        vykresli_text(screen, "Paused", (255, 255, 255), (screen.get_width()//2, 250), "center", 200)
+        vykresli_text(screen, "Paused", (255, 255, 255), (config.obrazovka_sirka//2, 250), "center", 200)
 
         vykresli_tlacitko(screen, "Continue", pokracovat_rect)
         vykresli_tlacitko(screen, "Restart", restart_rect)
@@ -301,17 +318,17 @@ def konec_menu(screen, km_ujet):
     config.uloz_config()
     konec = True
     posledni_snimek = screen.copy()
-    restart_rect = pygame.Rect(screen.get_width()//4 - 200, 550, 400, 100)
-    menu_rect = pygame.Rect(screen.get_width()//4 - 200, 700, 400, 100)
+    restart_rect = pygame.Rect(config.obrazovka_sirka//4 - 200, 550, 400, 100)
+    menu_rect = pygame.Rect(config.obrazovka_sirka//4 - 200, 700, 400, 100)
     while konec:
         screen.blit(posledni_snimek, (0,0))
-        pruhledna_cerna = pygame.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
+        pruhledna_cerna = pygame.Surface((config.obrazovka_sirka, config.obrazovka_vyska), pygame.SRCALPHA)
         pruhledna_cerna.fill((0, 0, 0, 140))
         screen.blit(pruhledna_cerna, (0, 0))
 
-        vykresli_text(screen, "Game Over", (255, 80, 80), (screen.get_width()//4, 250), "center", 150)
-        vykresli_text(screen, f"Money: {config.prachy}", (255, 215, 0), (screen.get_width()//4, 400), "center", 70)
-        vykresli_text(screen, f"Distance: {round(km_ujet/1000, 2)} km", (255, 255, 255), (screen.get_width()//4, 480), "center", 60)
+        vykresli_text(screen, "Game Over", (255, 80, 80), (config.obrazovka_sirka//4, 250), "center", 150)
+        vykresli_text(screen, f"Money: {config.prachy}", (255, 215, 0), (config.obrazovka_sirka//4, 400), "center", 70)
+        vykresli_text(screen, f"Distance: {round(km_ujet/1000, 2)} km", (255, 255, 255), (config.obrazovka_sirka//4, 480), "center", 60)
 
         vykresli_tlacitko(screen, "Restart", restart_rect)
         vykresli_tlacitko(screen, "Back to menu", menu_rect)
@@ -390,25 +407,29 @@ def main():
 
     vybrana_mapa = config.vybrana_mapa
     
-    mraky = []
-    if not config.potato_pc:
-        for vrstva in range(3):
-            parallax = 0.15 + 0.2 * vrstva
-            for i in range(2):
-                x = random.randint(0, config.obrazovka_sirka * 2)
-                y = vrstva * 10 - random.randint(70, 80)
-                velikost = 0.7 + 0.3 * random.random()
-                mraky.append({
-                    "x": x,
-                    "y": y,
-                    "parallax": parallax,
-                    "velikost": velikost,
-                    "vrstva": vrstva
-                })
+    if not(config.potato_pc):
+        mraky = []
+        if not config.potato_pc:
+            for vrstva in range(3):
+                parallax = 0.15 + 0.2 * vrstva
+                for i in range(2):
+                    x = random.randint(0, config.obrazovka_sirka * 2)
+                    y = vrstva * 10 - random.randint(70, 80)
+                    velikost = 0.7 + 0.3 * random.random()
+                    mraky.append({
+                        "x": x,
+                        "y": y,
+                        "parallax": parallax,
+                        "velikost": velikost,
+                        "vrstva": vrstva
+                    })
 
 
-    kaminky = {}
-
+        kaminky = {}
+        
+        particly = []
+        na_zemi_predni = False
+        na_zemi_zadni = False
 
 
     if vybrana_mapa == 1:  # mesic
@@ -464,7 +485,6 @@ def main():
         jidlo_img = banan_img
         jidlo_energie = banan_energie
 
-    mince_predmety.empty()
     posledni_mince = 0
 
     camera = Vector(0, 0)
@@ -488,6 +508,7 @@ def main():
 
     uhel_rucicky = -220 
 
+    energie_predmety.add(EnergetickyPredmet(vzdalenost_predmetu, fyzika.generace_bod(vzdalenost_predmetu) - 150, jidlo_img, jidlo_energie))
     while bezi:
         ted = pygame.time.get_ticks() / 1000.0
         snimky_cas = ted - posledni_cas
@@ -529,7 +550,7 @@ def main():
         while accumulator >= dt:
             kolo_predchozi.copy_state_from(kolo)
 
-            kolo.tick(pressed_keys)
+            na_zemi_zadni, na_zemi_predni = kolo.tick(pressed_keys)
             kolo.energie -= config.ztrata_energie
 
             # mince spawn
@@ -636,13 +657,26 @@ def main():
 
         vykresli_kolo(kolo_interpolace, camera, rafek_img, ram_obrazky[int(kolo_interpolace.animace_index)])
         vykresli_teren(screen, camera.x, camera.y, kaminky, barva_trava, barva_hlina, barva_kamen)
+        
+        rychlost = (abs(kolo.rear_wheel.get_speed().x / dt))/2000
+        if not(config.potato_pc):
+            if random.random() < rychlost:
+                if na_zemi_zadni:
+                    particly.append(Particle((kolo_interpolace.rear_wheel.get_position().x, kolo_interpolace.rear_wheel.get_position().y + config.WHEEL_RADIUS)))
+                if na_zemi_predni:
+                    particly.append(Particle((kolo_interpolace.front_wheel.get_position().x, kolo_interpolace.front_wheel.get_position().y + config.WHEEL_RADIUS)))
+
+            for particle in particly:
+                particle.update()
+                particle.draw(screen, camera, barva_hlina)
+                if particle.zivot <= 0:
+                    particly.remove(particle)
 
         for mince in mince_predmety.copy():
             mince.vykresli(screen, camera.x, camera.y)
         for predmet in energie_predmety.copy():
             predmet.vykresli(screen, camera.x, camera.y)
 
-        rychlost = (kolo.rear_wheel.get_speed().x / dt)
         uhel_rucicky = vykresli_ui(screen, kolo_interpolace.rear_axel.get_position().x, kolo_interpolace.energie, kolo_interpolace.rear_axel.get_position().x, rychlost, pygame.time.get_ticks() - start_cas, uhel_rucicky)
         vykresli_text(screen, f"{config.prachy} $", (255, 215, 0), (22, 360), velikost=50)
 
