@@ -54,7 +54,7 @@ def get_font(velikost, font):
         FONTY[klic] = pygame.font.SysFont(font, velikost)
     return FONTY[klic]
 
-def vykresli_text(surf, text, barva, pozice, zarovnat="left", velikost=50, font="Arial", bold=False, podrtzeny=False):
+def vykresli_text(surf, text, barva, pozice, zarovnat="left", velikost=50, font="Arial", bold=False, podrtzeny=False, shadow=False, shadow_offset=(3, 3)):
     pismo = get_font(velikost,font)
     pismo.set_bold(bold)
     pismo.set_underline(podrtzeny)
@@ -66,6 +66,18 @@ def vykresli_text(surf, text, barva, pozice, zarovnat="left", velikost=50, font=
         text_rect.center = pozice
     elif zarovnat == "right":
         text_rect.topright = pozice
+
+    if shadow:
+        shadow_surface = pismo.render(text, True, (0,0,0))
+        shadow_rect = shadow_surface.get_rect()
+        if zarovnat == "left":
+            shadow_rect.topleft = (pozice[0] + shadow_offset[0], pozice[1] + shadow_offset[1])
+        elif zarovnat == "center":
+            shadow_rect.center = (pozice[0] + shadow_offset[0], pozice[1] + shadow_offset[1])
+        elif zarovnat == "right":
+            shadow_rect.topright = (pozice[0] + shadow_offset[0], pozice[1] + shadow_offset[1])
+        surf.blit(shadow_surface, shadow_rect)
+
     surf.blit(text_surface, text_rect)
 
 def vykresli_tlacitko(surface, text, rect, barva_textu=(255,255,255), barva_pozadi=(0, 70, 140), barva_okraje=(0,0,0), tloustka_okraje=2, velikost_pisma=50, font="Arial"):
@@ -128,13 +140,13 @@ class Particle:
         if self.zivot > 0:
             pygame.draw.circle(surface, barva, (int(self.x - camera.x), int(self.y - camera.y)),4)
 
-def vykresli_ui(screen, km, energie, kolo_x, rychlost, cas, uhel_rucicky):
-    vykresli_text(screen, f"Distance: {round(km/1000,1)} km", (0, 0, 0), (22, 20))
+def vykresli_ui(screen, km, energie, kolo_x, rychlost, cas, uhel_rucicky, fps):
+    vykresli_text(screen, f"Distance: {round(km/1000,1)} km", (255,255,255), (20, 20), shadow=True)
 
-    pygame.draw.rect(screen, (50, 50, 50), (20, 90, 250, 40))
+    pygame.draw.rect(screen, (50, 50, 50), (20, 90, 250, 40), border_radius=10)
     if energie > 0:
-        pygame.draw.rect(screen, (255, 215, 0), (20, 90, 2.5 * energie, 40))
-    pygame.draw.rect(screen, (0, 0, 0), (20, 90, 250, 40), 2)
+        pygame.draw.rect(screen, (255, 215, 0), (20, 90, 2.5 * energie, 40), border_radius=10)
+    pygame.draw.rect(screen, (0, 0, 0), (20, 90, 250, 40), 2, border_radius=10)
 
     screen.blit(tachometr_img, (50, 650))
 
@@ -175,7 +187,12 @@ def vykresli_ui(screen, km, energie, kolo_x, rychlost, cas, uhel_rucicky):
 
         if nejblizsi:
             vzdalenost = nejblizsi.svet_x - kolo_x
-            vykresli_text(screen, f"{round(vzdalenost/1000,1)} km →", (0, 0, 0), (config.obrazovka_sirka - 20, 200), zarovnat="right")
+            vykresli_text(screen, f"{round(vzdalenost/1000,1)} km →", (255,255,255), (config.obrazovka_sirka - 20, 200), zarovnat="right", shadow=True)
+
+    vykresli_text(screen, f"{config.prachy} $", (255, 215, 0), (20, 145), shadow=True)
+
+    if config.fps:
+        vykresli_text(screen, f"FPS: {int(fps)}", (255,255,255), (20, 210), shadow=True)
 
     return novy_uhel
 
@@ -677,12 +694,7 @@ def main():
         for predmet in energie_predmety.copy():
             predmet.vykresli(screen, camera.x, camera.y)
 
-        uhel_rucicky = vykresli_ui(screen, kolo_interpolace.rear_axel.get_position().x, kolo_interpolace.energie, kolo_interpolace.rear_axel.get_position().x, rychlost, pygame.time.get_ticks() - start_cas, uhel_rucicky)
-        vykresli_text(screen, f"{config.prachy} $", (255, 215, 0), (22, 360), velikost=50)
-
-        if config.fps:
-            fps = clock.get_fps()
-            vykresli_text(screen, f"FPS: {int(fps)}", (0, 0, 0), (20, 150), velikost=100)
+        uhel_rucicky = vykresli_ui(screen, kolo_interpolace.rear_axel.get_position().x, kolo_interpolace.energie, kolo_interpolace.rear_axel.get_position().x, rychlost, pygame.time.get_ticks() - start_cas, uhel_rucicky, clock.get_fps())
 
         pygame.draw.circle(screen, (240, 240, 255), pause_tlacitko_center, pause_tlacitko_polomer)
         pygame.draw.circle(screen, (0, 0, 0), pause_tlacitko_center, pause_tlacitko_polomer, 4)
