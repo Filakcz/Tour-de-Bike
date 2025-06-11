@@ -80,13 +80,13 @@ def vykresli_text(surf, text, barva, pozice, zarovnat="left", velikost=50, font=
 
     surf.blit(text_surface, text_rect)
 
-def vykresli_tlacitko(surface, text, rect, barva_textu=(255,255,255), barva_pozadi=(0, 70, 140), barva_okraje=(0,0,0), tloustka_okraje=2, velikost_pisma=50, font="Arial"):
+def vykresli_tlacitko(surface, text, rect, barva_textu=(255,255,255), barva_pozadi=(0, 70, 140), barva_okraje=(0,0,0), tloustka_okraje=2, velikost_pisma=50, font="Arial", shadow=False):
     pygame.draw.rect(surface, barva_pozadi, rect)
 
     if tloustka_okraje > 0:
         pygame.draw.rect(surface, barva_okraje, rect, tloustka_okraje)
 
-    vykresli_text(surface, text, barva_textu, rect.center, "center", velikost_pisma, font)
+    vykresli_text(surface, text, barva_textu, rect.center, "center", velikost_pisma, font, shadow=shadow)
 
 class EnergetickyPredmet(pygame.sprite.Sprite):
     def __init__(self, x, y, obrazek, pridavek_energie):
@@ -140,7 +140,7 @@ class Particle:
         if self.zivot > 0:
             pygame.draw.circle(surface, barva, (int(self.x - camera.x), int(self.y - camera.y)),4)
 
-def vykresli_ui(screen, km, energie, kolo_x, rychlost, cas, uhel_rucicky, fps):
+def vykresli_ui(screen, km, energie, kolo_x, rychlost, cas, uhel_rucicky, fps, jidlo_img):
     vykresli_text(screen, f"Distance: {round(km/1000,1)} km", (255,255,255), (20, 20), shadow=True)
 
     pygame.draw.rect(screen, (50, 50, 50), (20, 90, 250, 40), border_radius=10)
@@ -187,7 +187,23 @@ def vykresli_ui(screen, km, energie, kolo_x, rychlost, cas, uhel_rucicky, fps):
 
         if nejblizsi:
             vzdalenost = nejblizsi.svet_x - kolo_x
-            vykresli_text(screen, f"{round(vzdalenost/1000,1)} km →", (255,255,255), (config.obrazovka_sirka - 20, 200), zarovnat="right", shadow=True)
+            text = f"{round(vzdalenost/1000,1)} km →"
+            font = get_font(50, "Arial")
+            text_sirka,text_vyska = font.size(text)
+
+            obrazek_sirka = jidlo_img.get_width()
+            obrazek_vyska = jidlo_img.get_height()
+
+            total_width = text_sirka + obrazek_sirka + 10
+            x = config.obrazovka_sirka - total_width - 20  
+
+            y_centr = 200 
+
+            obrazek_y = y_centr - obrazek_vyska // 2
+            text_y = y_centr - text_vyska // 2
+            screen.blit(jidlo_img, (x, obrazek_y))
+
+            vykresli_text(screen, text, (255,255,255), (config.obrazovka_sirka - 20, text_y), zarovnat="right", shadow=True)
 
     vykresli_text(screen, f"{config.prachy} $", (255, 215, 0), (20, 145), shadow=True)
 
@@ -308,11 +324,11 @@ def pause_menu(screen):
         pruhledna_cerna = pygame.Surface((config.obrazovka_sirka, config.obrazovka_vyska), pygame.SRCALPHA)
         pruhledna_cerna.fill((0, 0, 0, 140))
         screen.blit(pruhledna_cerna, (0, 0))
-        vykresli_text(screen, "Paused", (255, 255, 255), (config.obrazovka_sirka//2, 250), "center", 200)
+        vykresli_text(screen, "Paused", (255, 255, 255), (config.obrazovka_sirka//2, 250), "center", 200, shadow=True)
 
-        vykresli_tlacitko(screen, "Continue", pokracovat_rect)
-        vykresli_tlacitko(screen, "Restart", restart_rect)
-        vykresli_tlacitko(screen, "Back to menu", menu_rect)
+        vykresli_tlacitko(screen, "Continue", pokracovat_rect, shadow=True)
+        vykresli_tlacitko(screen, "Restart", restart_rect, shadow=True)
+        vykresli_tlacitko(screen, "Back to menu", menu_rect, shadow=True)
 
         pygame.display.flip()
         for event in pygame.event.get():
@@ -331,24 +347,26 @@ def pause_menu(screen):
                 elif menu_rect.collidepoint(event.pos):
                     return "menu"
 
-def konec_menu(screen, km_ujet):
+def konec_menu(screen, km_ujet, run_prachy):
     config.uloz_config()
     konec = True
     posledni_snimek = screen.copy()
-    restart_rect = pygame.Rect(config.obrazovka_sirka//4 - 200, 550, 400, 100)
-    menu_rect = pygame.Rect(config.obrazovka_sirka//4 - 200, 700, 400, 100)
+    restart_rect = pygame.Rect(config.obrazovka_sirka//4 - 200, 640, 400, 100)
+    menu_rect = pygame.Rect(config.obrazovka_sirka//4 - 200, 790, 400, 100)
     while konec:
         screen.blit(posledni_snimek, (0,0))
         pruhledna_cerna = pygame.Surface((config.obrazovka_sirka, config.obrazovka_vyska), pygame.SRCALPHA)
         pruhledna_cerna.fill((0, 0, 0, 140))
         screen.blit(pruhledna_cerna, (0, 0))
 
-        vykresli_text(screen, "Game Over", (255, 80, 80), (config.obrazovka_sirka//4, 250), "center", 150)
-        vykresli_text(screen, f"Money: {config.prachy}", (255, 215, 0), (config.obrazovka_sirka//4, 400), "center", 70)
-        vykresli_text(screen, f"Distance: {round(km_ujet/1000, 2)} km", (255, 255, 255), (config.obrazovka_sirka//4, 480), "center", 60)
+        vykresli_text(screen, "Game Over", (255, 80, 80), (config.obrazovka_sirka//4, 250), "center", 150, shadow=True)
+        vykresli_text(screen, f"This run: {run_prachy} $", (255, 215, 0), (config.obrazovka_sirka//4, 400), "center", 70, shadow=True)
+        vykresli_text(screen, f"Total: {config.prachy} $", (255, 215, 0), (config.obrazovka_sirka//4, 480), "center", 70, shadow=True)
+        vykresli_text(screen, f"Distance: {round(km_ujet/1000, 2)} km", (255, 255, 255), (config.obrazovka_sirka//4, 560), "center", 70, shadow=True)
 
-        vykresli_tlacitko(screen, "Restart", restart_rect)
-        vykresli_tlacitko(screen, "Back to menu", menu_rect)
+
+        vykresli_tlacitko(screen, "Restart", restart_rect, shadow=True)
+        vykresli_tlacitko(screen, "Back to menu", menu_rect, shadow=True)
 
         pygame.display.flip()
         for event in pygame.event.get():
@@ -525,6 +543,8 @@ def main():
 
     uhel_rucicky = -220 
 
+    run_prachy = 0
+
     energie_predmety.add(EnergetickyPredmet(vzdalenost_predmetu, fyzika.generace_bod(vzdalenost_predmetu) - 150, jidlo_img, jidlo_energie))
     while bezi:
         ted = pygame.time.get_ticks() / 1000.0
@@ -591,6 +611,7 @@ def main():
                         offset = (mince_pos[0] - pos[0], mince_pos[1] - pos[1])
                         if mask.overlap(mince_mask, offset):
                             config.prachy += 1
+                            run_prachy += 1
                             mince_predmety.remove(mince)
                             break
 
@@ -618,7 +639,7 @@ def main():
             km_ujet = kolo.rear_axel.get_position().x
             if kolo.energie < -10:
                 while True:
-                    akce = konec_menu(screen, km_ujet)
+                    akce = konec_menu(screen, km_ujet, run_prachy)
                     if akce == "restart":
                         main()
                         return
@@ -651,7 +672,7 @@ def main():
                     break
             if kolize:
                 while True:
-                    akce = konec_menu(screen, km_ujet)
+                    akce = konec_menu(screen, km_ujet, run_prachy)
                     if akce == "restart":
                         main()
                         return
@@ -694,7 +715,7 @@ def main():
         for predmet in energie_predmety.copy():
             predmet.vykresli(screen, camera.x, camera.y)
 
-        uhel_rucicky = vykresli_ui(screen, kolo_interpolace.rear_axel.get_position().x, kolo_interpolace.energie, kolo_interpolace.rear_axel.get_position().x, rychlost, pygame.time.get_ticks() - start_cas, uhel_rucicky, clock.get_fps())
+        uhel_rucicky = vykresli_ui(screen, kolo_interpolace.rear_axel.get_position().x, kolo_interpolace.energie, kolo_interpolace.rear_axel.get_position().x, rychlost, pygame.time.get_ticks() - start_cas, uhel_rucicky, clock.get_fps(), jidlo_img)
 
         pygame.draw.circle(screen, (240, 240, 255), pause_tlacitko_center, pause_tlacitko_polomer)
         pygame.draw.circle(screen, (0, 0, 0), pause_tlacitko_center, pause_tlacitko_polomer, 4)

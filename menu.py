@@ -107,7 +107,7 @@ def menu_mapy():
     bezi = True
     while bezi:
         screen.blit(obloha_img, (0,0))
-        vykresli_text(screen, "Select Map", (0, 0, 0), (config.obrazovka_sirka//2, 100), "center", velikost=100, podrtzeny=True)
+        vykresli_text(screen, "Select Map", (0, 0, 0), (config.obrazovka_sirka//2, 100), "center", velikost=125, podrtzeny=True)
 
         leva_sipka = pygame.Rect(400, 400, 120, 150)
         prava_sipka = pygame.Rect(1400, 400, 120, 150)
