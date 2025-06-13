@@ -65,9 +65,9 @@ margin_x = 50
 # TODO
 # procentualne na obrazovce vykreslovat
 # hudba, zvuk!
-# senska mysi
 # optimalizace
 # cedulky s rekordama
+# tutorial
 # easter eggy
 
 def menu():
@@ -107,7 +107,7 @@ def menu_mapy():
     bezi = True
     while bezi:
         screen.blit(obloha_img, (0,0))
-        vykresli_text(screen, "Select Map", (0, 0, 0), (config.obrazovka_sirka//2, 100), "center", velikost=125, podrtzeny=True)
+        vykresli_text(screen, "Select Map", (0,0,0), (config.obrazovka_sirka//2, 100), "center", velikost=125, podrtzeny=True)
 
         leva_sipka = pygame.Rect(400, 400, 120, 150)
         prava_sipka = pygame.Rect(1400, 400, 120, 150)
@@ -117,9 +117,18 @@ def menu_mapy():
         nazev, img = mapy[config.vybrana_mapa]
         img = pygame.transform.smoothscale(img, (608, 342))
         screen.blit(img, (config.obrazovka_sirka//2 - 300, 250))
-        vykresli_text(screen, nazev, (0, 0, 0), (config.obrazovka_sirka//2, 700), "center", 80)
+        if config.vybrana_mapa == 0:
+            barva = (0, 154, 23)
+        elif config.vybrana_mapa == 1:
+            barva = (232, 232, 232)
+        elif config.vybrana_mapa == 2:
+            barva = (100, 100, 100)
+        else:
+            barva = (210, 180, 100) 
+        vykresli_text(screen, nazev, barva, (config.obrazovka_sirka//2, 650), "center", 80, shadow=True)
+        vykresli_text(screen, f"Personal best: {config.rekordy[config.vybrana_mapa]} km", (255, 200, 0),(config.obrazovka_sirka//2, 750), "center", 80, shadow=True)
 
-        tlacitko_start = pygame.Rect(config.obrazovka_sirka//2 - 200, 800, 400, 100)
+        tlacitko_start = pygame.Rect(config.obrazovka_sirka//2 - 200, 850, 400, 100)
         vykresli_tlacitko(screen, "Start", tlacitko_start, barva_pozadi=(180,255,180), barva_textu=(0,0,0))
 
         tlacitko_zpet = pygame.Rect(50, 900, 250, 80)
@@ -448,6 +457,7 @@ def menu_nastaveni():
                     config.kola_odemcena = [True, False, False]
                     config.jidla_odemcena = [True, False, False]
                     config.kola_upgrady = [[0, 0], [0, 0], [0, 0]]
+                    config.rekordy = [0,0,0,0]
                     zprava = "Stats reset successfully!"
                     zprava_cas = pygame.time.get_ticks() / 1000
 

@@ -312,7 +312,7 @@ def vykresli_mraky(screen, kamera_x, kamera_y, mraky, mapa):
             x = int(m["x"] - kamera_x * m["parallax"])
         screen.blit(img, (x, y))
 
-def pause_menu(screen):
+def pause_menu(screen, km_ujet):
     config.uloz_config()
     paused = True
     posledni_snimek = screen.copy()
@@ -345,24 +345,33 @@ def pause_menu(screen):
                 elif restart_rect.collidepoint(event.pos):
                     return "restart"
                 elif menu_rect.collidepoint(event.pos):
+                    km_ujet = round(km_ujet/1000, 2)
+                    if km_ujet > config.rekordy[config.vybrana_mapa]:
+                        config.rekordy[config.vybrana_mapa] = km_ujet
                     return "menu"
 
-def konec_menu(screen, km_ujet, run_prachy):
+def konec_menu(screen, km_ujet, run_prachy, proc):
     config.uloz_config()
     konec = True
     posledni_snimek = screen.copy()
     restart_rect = pygame.Rect(config.obrazovka_sirka//4 - 200, 640, 400, 100)
     menu_rect = pygame.Rect(config.obrazovka_sirka//4 - 200, 790, 400, 100)
+    
+    km_ujet = round(km_ujet/1000, 2)
+
+    if km_ujet > config.rekordy[config.vybrana_mapa]:
+        config.rekordy[config.vybrana_mapa] = km_ujet
+
     while konec:
         screen.blit(posledni_snimek, (0,0))
         pruhledna_cerna = pygame.Surface((config.obrazovka_sirka, config.obrazovka_vyska), pygame.SRCALPHA)
         pruhledna_cerna.fill((0, 0, 0, 140))
         screen.blit(pruhledna_cerna, (0, 0))
 
-        vykresli_text(screen, "Game Over", (255, 80, 80), (config.obrazovka_sirka//4, 250), "center", 150, shadow=True)
+        vykresli_text(screen, f"Game Over - {proc}", (255, 80, 80), (config.obrazovka_sirka//2, 250), "center", 150, shadow=True)
         vykresli_text(screen, f"This run: {run_prachy} $", (255, 215, 0), (config.obrazovka_sirka//4, 400), "center", 70, shadow=True)
         vykresli_text(screen, f"Total: {config.prachy} $", (255, 215, 0), (config.obrazovka_sirka//4, 480), "center", 70, shadow=True)
-        vykresli_text(screen, f"Distance: {round(km_ujet/1000, 2)} km", (255, 255, 255), (config.obrazovka_sirka//4, 560), "center", 70, shadow=True)
+        vykresli_text(screen, f"Distance: {km_ujet} km", (255, 255, 255), (config.obrazovka_sirka//4, 560), "center", 70, shadow=True)
 
 
         vykresli_tlacitko(screen, "Restart", restart_rect, shadow=True)
@@ -564,7 +573,7 @@ def main():
                 quit()
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    akce = pause_menu(screen)
+                    akce = pause_menu(screen, km_ujet)
                     if akce == "pokracovat":
                         continue
                     elif akce == "restart":
@@ -574,7 +583,7 @@ def main():
                         bezi = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if pause_tlacitko_rect.collidepoint(event.pos):
-                    akce = pause_menu(screen)
+                    akce = pause_menu(screen, km_ujet)
                     if akce == "pokracovat":
                         continue
                     elif akce == "restart":
@@ -695,7 +704,7 @@ def main():
             km_ujet = kolo.rear_axel.get_position().x
             if kolo.energie < -10:
                 while True:
-                    akce = konec_menu(screen, km_ujet, run_prachy)
+                    akce = konec_menu(screen, km_ujet, run_prachy, "out of energy")
                     if akce == "restart":
                         main()
                         return
@@ -728,7 +737,7 @@ def main():
                     break
             if kolize:
                 while True:
-                    akce = konec_menu(screen, km_ujet, run_prachy)
+                    akce = konec_menu(screen, km_ujet, run_prachy, "skull cracked")
                     if akce == "restart":
                         main()
                         return
