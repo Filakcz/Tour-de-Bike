@@ -590,6 +590,62 @@ def main():
             na_zemi_zadni, na_zemi_predni = kolo.tick(pressed_keys)
             kolo.energie -= config.ztrata_energie
 
+            # backflipy a frontflipy 
+            if kolo.udelal_backflip:
+                kolo.udelal_backflip = False
+                if kolo.backflip_cas > 0:
+                    kolo.pocet_backflipu += 1
+                else:
+                    kolo.pocet_backflipu = 1
+                kolo.backflip_cas = 2.0 
+                
+                config.prachy += 5
+
+                if kolo.pocet_backflipu == 1:
+                    kolo.zobrazeni_textu = "Backflip!"
+                elif kolo.pocet_backflipu == 2:
+                    kolo.zobrazeni_textu = "Double Backflip!"
+                elif kolo.pocet_backflipu == 3:
+                    kolo.zobrazeni_textu = "Triple Backflip!"
+                else:
+                    kolo.zobrazeni_textu = f"{kolo.pocet_backflipu}x Backflip!"
+
+                kolo.text_cas = 2.0
+
+            if kolo.udelal_frontflip:
+                kolo.udelal_frontflip = False
+                if kolo.frontflip_cas > 0:
+                    kolo.pocet_frontflipu += 1
+                else:
+                    kolo.pocet_frontflipu = 1
+                kolo.frontflip_cas = 2.0  
+
+                config.prachy += 5
+
+                if kolo.pocet_frontflipu == 1:
+                    kolo.zobrazeni_textu = "Frontflip!"
+                elif kolo.pocet_frontflipu == 2:
+                    kolo.zobrazeni_textu = "Double Frontflip!"
+                elif kolo.pocet_frontflipu == 3:
+                    kolo.zobrazeni_textu = "Triple Frontflip!"
+                else:
+                    kolo.zobrazeni_textu = f"{kolo.pocet_frontflipu}x Frontflip!"
+
+                kolo.text_cas = 2.0 
+
+            if kolo.backflip_cas > 0:
+                kolo.backflip_cas -= dt
+            else:
+                kolo.pocet_backflipu = 0
+
+            if kolo.frontflip_cas > 0:
+                kolo.frontflip_cas -= dt
+            else:
+                kolo.pocet_frontflipu = 0
+
+            if kolo.text_cas > 0:
+                kolo.text_cas -= dt
+
             # mince spawn
             while kolo.rear_axel.position.x + config.obrazovka_sirka >= posledni_mince + vzadelnost_minci:
                 posledni_mince += vzadelnost_minci
@@ -716,6 +772,9 @@ def main():
             predmet.vykresli(screen, camera.x, camera.y)
 
         uhel_rucicky = vykresli_ui(screen, kolo_interpolace.rear_axel.get_position().x, kolo_interpolace.energie, kolo_interpolace.rear_axel.get_position().x, rychlost, pygame.time.get_ticks() - start_cas, uhel_rucicky, clock.get_fps(), jidlo_img)
+
+        if kolo.text_cas > 0:
+            vykresli_text(screen, kolo.zobrazeni_textu, (255, 200, 0), (config.obrazovka_sirka//2, config.obrazovka_vyska//4), zarovnat="center", shadow=True, velikost=100)
 
         pygame.draw.circle(screen, (240, 240, 255), pause_tlacitko_center, pause_tlacitko_polomer)
         pygame.draw.circle(screen, (0, 0, 0), pause_tlacitko_center, pause_tlacitko_polomer, 4)

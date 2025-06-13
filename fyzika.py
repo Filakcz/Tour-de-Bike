@@ -204,6 +204,17 @@ class Bike:
     self.rychlost_animace = 0.5
     self.energie = 100
 
+    self.celkova_rotace = 0.0
+    self.posledni_uhel = None
+    self.udelal_frontflip = False
+    self.udelal_backflip = False
+    self.pocet_backflipu = 0
+    self.backflip_cas = 0
+    self.pocet_frontflipu = 0
+    self.frontflip_cas = 0
+    self.zobrazeni_textu = ""
+    self.text_cas = 0
+
   def copy_state_from(self, other):
         self.rear_axel.position = Vector(other.rear_axel.position.x, other.rear_axel.position.y)
         self.rear_axel.last_position = Vector(other.rear_axel.last_position.x, other.rear_axel.last_position.y)
@@ -313,5 +324,30 @@ class Bike:
         self.front_axel.tick()
         self.rear_wheel.tick()
         self.front_wheel.tick()
+
+
+        delta = self.front_axel.get_position() - self.rear_axel.get_position()
+        uhel = math.atan2(delta.y, delta.x) # radiany
+
+        if self.posledni_uhel is not None:
+            uhel_rozdil = uhel - self.posledni_uhel
+
+            if uhel_rozdil > math.pi:
+                uhel_rozdil -= 2 * math.pi
+            elif uhel_rozdil < -math.pi:
+                uhel_rozdil += 2 * math.pi
+
+            if not zadni_touch and not predni_touch:
+                self.celkova_rotace += uhel_rozdil
+                if self.celkova_rotace > 2 * math.pi:
+                    self.udelal_frontflip = True
+                    self.celkova_rotace = 0 
+                elif self.celkova_rotace < -2 * math.pi:
+                    self.udelal_backflip = True
+                    self.celkova_rotace = 0  
+            else:
+                self.celkova_rotace = 0
+
+        self.posledni_uhel = uhel
 
         return zadni_touch, predni_touch

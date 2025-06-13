@@ -62,10 +62,10 @@ mapy = [
 
 margin_x = 50
 
-# TODO!!!
-# procentualne na obrazovce vykreslovat?
-# hezci ui
-# hudba, zvuk
+# TODO
+# procentualne na obrazovce vykreslovat
+# hudba, zvuk!
+# senska mysi
 # optimalizace
 # cedulky s rekordama
 # easter eggy
