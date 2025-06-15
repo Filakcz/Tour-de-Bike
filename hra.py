@@ -314,6 +314,8 @@ def vykresli_mraky(screen, kamera_x, kamera_y, mraky, mapa):
 
 def pause_menu(screen, km_ujet):
     config.uloz_config()
+    zvuky["slapky"].stop()
+
     paused = True
     posledni_snimek = screen.copy()
     pokracovat_rect = pygame.Rect(config.obrazovka_sirka//2 - 200, 400, 400, 100)
@@ -355,6 +357,7 @@ def pause_menu(screen, km_ujet):
 
 def konec_menu(screen, km_ujet, run_prachy, proc):
     config.uloz_config()
+    zvuky["slapky"].stop()
     zvuky["smrt"].play()
     konec = True
     posledni_snimek = screen.copy()
@@ -444,7 +447,8 @@ zvuky = {
     "jidlo_eat": pygame.mixer.Sound("sounds/jidlo_eat.mp3"),
     "smrt": pygame.mixer.Sound("sounds/smrt.mp3"),
     "flip": pygame.mixer.Sound("sounds/flip.mp3"),
-    "start": pygame.mixer.Sound("sounds/start.mp3")
+    "start": pygame.mixer.Sound("sounds/start.mp3"),
+    "slapky": pygame.mixer.Sound("sounds/slapky.mp3")
 }
 
 for i in zvuky.values():
@@ -572,6 +576,7 @@ def main():
     uhel_rucicky = -220 
 
     zvuky["start"].play()
+    slapky_bezi = False
 
     run_prachy = 0
 
@@ -788,6 +793,19 @@ def main():
         vykresli_teren(screen, camera.x, camera.y, kaminky, barva_trava, barva_hlina, barva_kamen)
         
         rychlost = (abs(kolo.rear_wheel.get_speed().x / dt))/2000
+
+        slapky_volume = min(max(rychlost, 0.05), 1.0) * config.volume_sound
+        zvuky["slapky"].set_volume(slapky_volume)
+
+        if rychlost > 0.05:
+            if not slapky_bezi:
+                zvuky["slapky"].play(-1)  # smyčka
+                slapky_bezi = True
+        else:
+            if slapky_bezi:
+                zvuky["slapky"].stop()
+                slapky_bezi = False
+
         if not(config.potato_pc):
             if random.random() < rychlost:
                 if na_zemi_zadni:

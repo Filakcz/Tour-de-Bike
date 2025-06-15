@@ -339,10 +339,10 @@ class Bike:
 
             if not zadni_touch and not predni_touch:
                 self.celkova_rotace += uhel_rozdil
-                if self.celkova_rotace > 2 * math.pi:
+                if self.celkova_rotace > 1.5 * math.pi:
                     self.udelal_frontflip = True
                     self.celkova_rotace = 0 
-                elif self.celkova_rotace < -2 * math.pi:
+                elif self.celkova_rotace < -1.5 * math.pi:
                     self.udelal_backflip = True
                     self.celkova_rotace = 0  
             else:
