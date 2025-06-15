@@ -3,7 +3,7 @@ import json
 
 # Nastaveni
 volume_sound = 0.5
-volume_music = 0.5
+volume_music = 0.2
 potato_pc = False
 fps = False
 fps_limit = 0.125

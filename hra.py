@@ -341,17 +341,21 @@ def pause_menu(screen, km_ujet):
                     return "pokracovat"
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if pokracovat_rect.collidepoint(event.pos):
+                    zvuky["ui_click"].play()
                     return "pokracovat"
                 elif restart_rect.collidepoint(event.pos):
+                    zvuky["ui_click"].play()
                     return "restart"
                 elif menu_rect.collidepoint(event.pos):
                     km_ujet = round(km_ujet/1000, 2)
                     if km_ujet > config.rekordy[config.vybrana_mapa]:
                         config.rekordy[config.vybrana_mapa] = km_ujet
+                    zvuky["ui_click"].play()
                     return "menu"
 
 def konec_menu(screen, km_ujet, run_prachy, proc):
     config.uloz_config()
+    zvuky["smrt"].play()
     konec = True
     posledni_snimek = screen.copy()
     restart_rect = pygame.Rect(config.obrazovka_sirka//4 - 200, 690, 400, 100)
@@ -386,8 +390,10 @@ def konec_menu(screen, km_ujet, run_prachy, proc):
                 quit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if restart_rect.collidepoint(event.pos):
+                    zvuky["ui_click"].play()
                     return "restart"
                 elif menu_rect.collidepoint(event.pos):
+                    zvuky["ui_click"].play()
                     return "menu"
 
 banan_img = pygame.image.load("img/banan.png").convert_alpha()
@@ -431,6 +437,18 @@ mrak_img = pygame.transform.smoothscale(mrak_img, (mrak_img.get_width() // 2, mr
 
 hvezda_img = pygame.image.load("img/mapy/hvezda.png").convert_alpha()
 hvezda_img = pygame.transform.smoothscale(hvezda_img, (hvezda_img.get_width() // 4, hvezda_img.get_height() // 4))
+
+zvuky = {
+    "ui_click": pygame.mixer.Sound("sounds/ui_click.mp3"),
+    "coin": pygame.mixer.Sound("sounds/coin.mp3"),
+    "jidlo_eat": pygame.mixer.Sound("sounds/jidlo_eat.mp3"),
+    "smrt": pygame.mixer.Sound("sounds/smrt.mp3"),
+    "flip": pygame.mixer.Sound("sounds/flip.mp3"),
+    "start": pygame.mixer.Sound("sounds/start.mp3")
+}
+
+for i in zvuky.values():
+    i.set_volume(config.volume_sound)
 
 rust_vzdalenosti = 200
 
@@ -553,6 +571,8 @@ def main():
 
     uhel_rucicky = -220 
 
+    zvuky["start"].play()
+
     run_prachy = 0
 
     energie_predmety.add(EnergetickyPredmet(vzdalenost_predmetu, fyzika.generace_bod(vzdalenost_predmetu) - 150, jidlo_img, jidlo_energie))
@@ -584,6 +604,7 @@ def main():
                         bezi = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if pause_tlacitko_rect.collidepoint(event.pos):
+                    zvuky["ui_click"].play()
                     akce = pause_menu(screen, km_ujet)
                     if akce == "pokracovat":
                         continue
@@ -609,6 +630,7 @@ def main():
                     kolo.pocet_backflipu = 1
                 kolo.backflip_cas = 2.0 
                 
+                zvuky["flip"].play()
                 config.prachy += 5
 
                 if kolo.pocet_backflipu == 1:
@@ -630,6 +652,7 @@ def main():
                     kolo.pocet_frontflipu = 1
                 kolo.frontflip_cas = 2.0  
 
+                zvuky["flip"].play()
                 config.prachy += 5
 
                 if kolo.pocet_frontflipu == 1:
@@ -676,6 +699,7 @@ def main():
                     for mask, pos in kolo_masky:
                         offset = (mince_pos[0] - pos[0], mince_pos[1] - pos[1])
                         if mask.overlap(mince_mask, offset):
+                            zvuky["coin"].play()
                             config.prachy += 1
                             run_prachy += 1
                             mince_predmety.remove(mince)
@@ -690,6 +714,7 @@ def main():
                     for mask, pos in kolo_masky:
                         offset = (predmet_pos[0] - pos[0], predmet_pos[1] - pos[1])
                         if mask.overlap(predmet_mask, offset):
+                            zvuky["jidlo_eat"].play()
                             kolo.energie = min(kolo.energie + predmet.pridavek_energie, 100)
                             energie_predmety.remove(predmet)
                             break

@@ -5,6 +5,7 @@ from hra import vykresli_text
 from hra import vykresli_tlacitko
 from hra import get_font
 from fyzika import nastav_kolo
+import hra
 
 pygame.init()
 
@@ -95,6 +96,7 @@ def menu():
                 quit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if tlacitko_start.collidepoint(event.pos):
+                    hra.zvuky["ui_click"].play()
                     vyber = menu_mapy()
                     if vyber is not None:
                         nastav_kolo(config.vybrane_kolo)
@@ -102,11 +104,15 @@ def menu():
                         config.uloz_config()
                         spust_hru()
                 elif tlacitko_vylepseni.collidepoint(event.pos):
+                    hra.zvuky["ui_click"].play()
                     menu_vylepseni()
                 elif tlacitko_nastaveni.collidepoint(event.pos):
+                    hra.zvuky["ui_click"].play()
                     menu_nastaveni()
                 elif tlacitko_konec.collidepoint(event.pos):
+                    hra.zvuky["ui_click"].play()
                     config.uloz_config()
+                    pygame.time.wait(120)
                     pygame.quit()
                     quit()
 
@@ -149,12 +155,16 @@ def menu_mapy():
                 quit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if leva_sipka.collidepoint(event.pos):
+                    hra.zvuky["ui_click"].play()
                     config.vybrana_mapa = (config.vybrana_mapa - 1) % len(mapy)
                 elif prava_sipka.collidepoint(event.pos):
+                    hra.zvuky["ui_click"].play()
                     config.vybrana_mapa = (config.vybrana_mapa + 1) % len(mapy)
                 elif tlacitko_start.collidepoint(event.pos):
+                    hra.zvuky["ui_click"].play()
                     return config.vybrana_mapa
                 elif tlacitko_zpet.collidepoint(event.pos):
+                    hra.zvuky["ui_click"].play()
                     return None
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
@@ -281,10 +291,13 @@ def menu_vylepseni():
                 quit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if leva_sipka.collidepoint(event.pos):
+                    hra.zvuky["ui_click"].play()
                     config.vybrane_kolo = (config.vybrane_kolo - 1) % len(bike_imgs)
                 elif prava_sipka.collidepoint(event.pos):
+                    hra.zvuky["ui_click"].play()
                     config.vybrane_kolo = (config.vybrane_kolo + 1) % len(bike_imgs)
                 elif tlacitko_kolo.collidepoint(event.pos):
+                    hra.zvuky["ui_click"].play()
                     id_kola = config.vybrane_kolo
                     if config.kola_odemcena[id_kola]:
                         config.vybrane_kolo = id_kola
@@ -295,6 +308,7 @@ def menu_vylepseni():
                 for upgrade_idx in range(2):
                     upgrade_rect = upgrade_rects[upgrade_idx]
                     if upgrade_rect.collidepoint(event.pos) and config.kola_odemcena[id_kola]:
+                        hra.zvuky["ui_click"].play()
                         if config.kola_upgrady[id_kola][upgrade_idx] < config.max_upgrade and config.prachy >= config.cena_upgrade[upgrade_idx]:
                             config.prachy -= config.cena_upgrade[upgrade_idx]
                             config.kola_upgrady[id_kola][upgrade_idx] += 1
@@ -302,6 +316,7 @@ def menu_vylepseni():
                 for i in range(len(jidlo_rects)):
                     rect = jidlo_rects[i]
                     if rect.collidepoint(event.pos):
+                        hra.zvuky["ui_click"].play()
                         if config.jidla_odemcena[i]:
                             config.vybrane_jidlo = i
                         elif config.prachy >= config.ceny_jidel[i]:
@@ -310,6 +325,7 @@ def menu_vylepseni():
                             config.vybrane_jidlo = i
 
                 if tlacitko_zpet.collidepoint(event.pos) and zpet_povoleno:
+                    hra.zvuky["ui_click"].play()
                     config.uloz_config()
                     bezi = False
 
@@ -399,9 +415,9 @@ def menu_nastaveni():
         pygame.draw.rect(screen, (240, 240, 255), kod_rect)
         pygame.draw.rect(screen, (0,0,0), kod_rect, 2)
         if zadavani_kodu:
-            vykresli_text(screen, secret_code, (0,0,0), (kod_rect.x + margin_x, kod_rect.centery - code_vyska/2))
+            vykresli_text(screen, secret_code, (0,0,0), (kod_rect.centerx, kod_rect.centery), "center")
         else:
-            vykresli_text(screen, "Click to type...", (0,0,0), (kod_rect.x + margin_x, kod_rect.centery - code_vyska/2))
+            vykresli_text(screen, "Click to type...", (0,0,0), (kod_rect.centerx, kod_rect.centery), "center")
         if zprava:
             if len(zprava) < 29:
                 vykresli_text(screen, zprava, (200, 0, 0), (config.obrazovka_sirka-margin_x,200), zarovnat="right", velikost=100)
@@ -428,27 +444,34 @@ def menu_nastaveni():
                 quit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if tlacitko_zpet.collidepoint(event.pos):
+                    hra.zvuky["ui_click"].play()
                     bezi = False
                 elif slider_rect_sound.collidepoint(event.pos):
                     config.volume_sound = min(max((event.pos[0] - slider_rect_sound.x) / slider_rect_sound.width, 0), 1)
+                    for i in hra.zvuky.values():
+                        i.set_volume(config.volume_sound)
                 elif slider_rect_music.collidepoint(event.pos):
                     config.volume_music = min(max((event.pos[0] - slider_rect_music.x) / slider_rect_music.width, 0), 1)
                     pygame.mixer.music.set_volume(config.volume_music)
                 elif checkbox_rect_potato.collidepoint(event.pos):
+                    hra.zvuky["ui_click"].play()
                     config.potato_pc = not config.potato_pc
                 elif checkbox_rect_fps.collidepoint(event.pos):
+                    hra.zvuky["ui_click"].play()
                     config.fps = not config.fps
                 elif slider_rect_fps_limit.collidepoint(event.pos):
                     config.fps_limit = min(max((event.pos[0] - slider_rect_fps_limit.x)/ slider_rect_fps_limit.width,0),1)
                 elif checkbox_rect_fullscreen.collidepoint(event.pos):
+                    hra.zvuky["ui_click"].play()
                     config.fullscreen = not config.fullscreen
                     if config.fullscreen:
                         pygame.display.set_mode((config.obrazovka_sirka, config.obrazovka_vyska), pygame.FULLSCREEN)
                     else:
                         pygame.display.set_mode((config.obrazovka_sirka, config.obrazovka_vyska))
                 elif tlacitko_reset.collidepoint(event.pos):
+                    hra.zvuky["ui_click"].play()
                     config.volume_sound = 0.5
-                    config.volume_music = 0.5
+                    config.volume_music = 0.2
                     pygame.mixer.music.set_volume(config.volume_music)
                     config.potato_pc = False
                     config.fps = False
@@ -460,6 +483,7 @@ def menu_nastaveni():
                     zprava_cas = pygame.time.get_ticks() / 1000
 
                 elif tlacitko_reset_staty.collidepoint(event.pos):
+                    hra.zvuky["ui_click"].play()
                     config.prachy = 0
                     config.vybrane_kolo = 0
                     config.vybrane_jidlo = 0
@@ -471,6 +495,7 @@ def menu_nastaveni():
                     zprava_cas = pygame.time.get_ticks() / 1000
 
                 elif kod_rect.collidepoint(event.pos):
+                    hra.zvuky["ui_click"].play()
                     zadavani_kodu = True
                     secret_code = ""
                     zprava = ""
@@ -480,6 +505,8 @@ def menu_nastaveni():
                 if pygame.mouse.get_pressed()[0]:
                     if slider_rect_sound.collidepoint(event.pos):
                         config.volume_sound = min(max((event.pos[0] - slider_rect_sound.x) / slider_rect_sound.width, 0), 1)
+                        for i in hra.zvuky.values():
+                            i.set_volume(config.volume_sound)
                     elif slider_rect_music.collidepoint(event.pos):
                         config.volume_music = min(max((event.pos[0] - slider_rect_music.x) / slider_rect_music.width, 0), 1)
                         pygame.mixer.music.set_volume(config.volume_music)
@@ -488,7 +515,7 @@ def menu_nastaveni():
             elif event.type == pygame.KEYDOWN:
                 if zadavani_kodu:
                     if event.key == pygame.K_RETURN:
-                        if secret_code == "sparkyjegay":
+                        if secret_code == "martinkodjechaos":
                             config.prachy += 1000000
                             zprava = "+ 1 milion"
                         else:
@@ -499,7 +526,7 @@ def menu_nastaveni():
                     elif event.key == pygame.K_BACKSPACE:
                         secret_code = secret_code[:-1]
                     else:
-                        if len(secret_code) < 14 and event.unicode.isprintable():
+                        if len(secret_code) < 16 and event.unicode.isprintable():
                             secret_code += event.unicode
                 elif event.key == pygame.K_ESCAPE:
                     bezi = False
