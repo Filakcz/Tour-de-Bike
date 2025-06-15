@@ -59,16 +59,23 @@ mapy = [
 #vybrane_kolo = 0 # 0=silnicka, 1=hardtail, 2=celopero
 #vybrane_jidlo = 0 # 0=banan, 1=tycinka, 2=kure
 
+pygame.mixer.init()
+pygame.mixer.music.load("sounds/background_music.mp3")
+pygame.mixer.music.set_volume(config.volume_music)
+pygame.mixer.music.play(-1)
 
 margin_x = 50
 
 # TODO
-# procentualne na obrazovce vykreslovat
-# hudba, zvuk!
-# optimalizace
+# tutorial - jen pri spusteni hry. vysvetlit rozbiti hlavy, smrt energie, controls
 # cedulky s rekordama
-# tutorial
+# zvuk
+# optimalizace?
+# procentualne na obrazovce vykreslovat?
 # easter eggy
+# fonty
+# zlepsit readme a trailer?
+# tezsi zjistit kod?
 
 def menu():
     while True:
@@ -410,7 +417,7 @@ def menu_nastaveni():
         vykresli_tlacitko(screen, "Back", tlacitko_zpet, barva_pozadi=(255, 100, 100), barva_textu=(0,0,0))
 
         vykresli_text(screen, "Credits:", (0, 0, 0), (margin_x, 825))
-        vykresli_text(screen, "Ondra - physics, antialiasing, playtester; Rosta - bug fix stones, playtester; Martin - playtester", (0, 0, 0), (margin_x, 900), velikost=30)
+        vykresli_text(screen, "Ondra - physics, antialiasing, playtester; Rosta - bugfix stones, playtester; Martin - playtester, background music", (0, 0, 0), (margin_x, 900), velikost=30)
         vykresli_text(screen, "", (0, 0, 0), (margin_x, 900))
 
         pygame.display.flip()
@@ -426,6 +433,7 @@ def menu_nastaveni():
                     config.volume_sound = min(max((event.pos[0] - slider_rect_sound.x) / slider_rect_sound.width, 0), 1)
                 elif slider_rect_music.collidepoint(event.pos):
                     config.volume_music = min(max((event.pos[0] - slider_rect_music.x) / slider_rect_music.width, 0), 1)
+                    pygame.mixer.music.set_volume(config.volume_music)
                 elif checkbox_rect_potato.collidepoint(event.pos):
                     config.potato_pc = not config.potato_pc
                 elif checkbox_rect_fps.collidepoint(event.pos):
@@ -441,6 +449,7 @@ def menu_nastaveni():
                 elif tlacitko_reset.collidepoint(event.pos):
                     config.volume_sound = 0.5
                     config.volume_music = 0.5
+                    pygame.mixer.music.set_volume(config.volume_music)
                     config.potato_pc = False
                     config.fps = False
                     config.fps_limit = 0.125
@@ -473,6 +482,7 @@ def menu_nastaveni():
                         config.volume_sound = min(max((event.pos[0] - slider_rect_sound.x) / slider_rect_sound.width, 0), 1)
                     elif slider_rect_music.collidepoint(event.pos):
                         config.volume_music = min(max((event.pos[0] - slider_rect_music.x) / slider_rect_music.width, 0), 1)
+                        pygame.mixer.music.set_volume(config.volume_music)
                     elif slider_rect_fps_limit.collidepoint(event.pos):
                         config.fps_limit = min(max((event.pos[0] - slider_rect_fps_limit.x)/ slider_rect_fps_limit.width,0),1)
             elif event.type == pygame.KEYDOWN:

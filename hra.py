@@ -354,8 +354,8 @@ def konec_menu(screen, km_ujet, run_prachy, proc):
     config.uloz_config()
     konec = True
     posledni_snimek = screen.copy()
-    restart_rect = pygame.Rect(config.obrazovka_sirka//4 - 200, 640, 400, 100)
-    menu_rect = pygame.Rect(config.obrazovka_sirka//4 - 200, 790, 400, 100)
+    restart_rect = pygame.Rect(config.obrazovka_sirka//4 - 200, 690, 400, 100)
+    menu_rect = pygame.Rect(config.obrazovka_sirka//4 - 200, 840, 400, 100)
     
     km_ujet = round(km_ujet/1000, 2)
 
@@ -368,10 +368,11 @@ def konec_menu(screen, km_ujet, run_prachy, proc):
         pruhledna_cerna.fill((0, 0, 0, 140))
         screen.blit(pruhledna_cerna, (0, 0))
 
-        vykresli_text(screen, f"Game Over - {proc}", (255, 80, 80), (config.obrazovka_sirka//2, 250), "center", 150, shadow=True)
-        vykresli_text(screen, f"This run: {run_prachy} $", (255, 215, 0), (config.obrazovka_sirka//4, 400), "center", 70, shadow=True)
-        vykresli_text(screen, f"Total: {config.prachy} $", (255, 215, 0), (config.obrazovka_sirka//4, 480), "center", 70, shadow=True)
-        vykresli_text(screen, f"Distance: {km_ujet} km", (255, 255, 255), (config.obrazovka_sirka//4, 560), "center", 70, shadow=True)
+        vykresli_text(screen, f"Game Over", (255, 80, 80), (config.obrazovka_sirka//4,  250), "center", 150, shadow=True)
+        vykresli_text(screen, f"{proc}", (247, 153, 153), (config.obrazovka_sirka//4,  370), "center", 70, shadow=True)
+        vykresli_text(screen, f"This run: {run_prachy} $", (255, 215, 0), (config.obrazovka_sirka//4, 450), "center", 70, shadow=True)
+        vykresli_text(screen, f"Total: {config.prachy} $", (255, 215, 0), (config.obrazovka_sirka//4, 530), "center", 70, shadow=True)
+        vykresli_text(screen, f"Distance: {km_ujet} km", (255, 255, 255), (config.obrazovka_sirka//4, 610), "center", 70, shadow=True)
 
 
         vykresli_tlacitko(screen, "Restart", restart_rect, shadow=True)
@@ -611,13 +612,13 @@ def main():
                 config.prachy += 5
 
                 if kolo.pocet_backflipu == 1:
-                    kolo.zobrazeni_textu = "Backflip!"
+                    kolo.zobrazeni_textu = "Backflip! +5$"
                 elif kolo.pocet_backflipu == 2:
-                    kolo.zobrazeni_textu = "Double Backflip!"
+                    kolo.zobrazeni_textu = "Double Backflip! +10$"
                 elif kolo.pocet_backflipu == 3:
-                    kolo.zobrazeni_textu = "Triple Backflip!"
+                    kolo.zobrazeni_textu = "Triple Backflip! +15$"
                 else:
-                    kolo.zobrazeni_textu = f"{kolo.pocet_backflipu}x Backflip!"
+                    kolo.zobrazeni_textu = f"{kolo.pocet_backflipu}x Backflip! +{kolo.pocet_backflipu*5}$"
 
                 kolo.text_cas = 2.0
 
@@ -632,13 +633,13 @@ def main():
                 config.prachy += 5
 
                 if kolo.pocet_frontflipu == 1:
-                    kolo.zobrazeni_textu = "Frontflip!"
+                    kolo.zobrazeni_textu = "Frontflip! +5$"
                 elif kolo.pocet_frontflipu == 2:
-                    kolo.zobrazeni_textu = "Double Frontflip!"
+                    kolo.zobrazeni_textu = "Double Frontflip! +10$"
                 elif kolo.pocet_frontflipu == 3:
-                    kolo.zobrazeni_textu = "Triple Frontflip!"
+                    kolo.zobrazeni_textu = "Triple Frontflip! +15$"
                 else:
-                    kolo.zobrazeni_textu = f"{kolo.pocet_frontflipu}x Frontflip!"
+                    kolo.zobrazeni_textu = f"{kolo.pocet_frontflipu}x Frontflip! +{kolo.pocet_frontflipu*5}$"
 
                 kolo.text_cas = 2.0 
 
@@ -704,7 +705,7 @@ def main():
             km_ujet = kolo.rear_axel.get_position().x
             if kolo.energie < -10:
                 while True:
-                    akce = konec_menu(screen, km_ujet, run_prachy, "out of energy")
+                    akce = konec_menu(screen, km_ujet, run_prachy, "Out of energy!")
                     if akce == "restart":
                         main()
                         return
@@ -737,7 +738,7 @@ def main():
                     break
             if kolize:
                 while True:
-                    akce = konec_menu(screen, km_ujet, run_prachy, "skull cracked")
+                    akce = konec_menu(screen, km_ujet, run_prachy, "Skull cracked!")
                     if akce == "restart":
                         main()
                         return
