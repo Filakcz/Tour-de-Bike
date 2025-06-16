@@ -212,7 +212,7 @@ def vykresli_ui(screen, km, energie, kolo_x, rychlost, cas, uhel_rucicky, fps, j
 
     return novy_uhel
 
-def vykresli_teren(screen, kamera_x, kamera_y, kaminky, barva_trava, barva_hlina, barva_kamen):
+def vykresli_teren(screen, kamera_x, kamera_y, kaminky, barva_trava, barva_hlina, barva_kamen, rekord_x, rekord_y):
     
     body_trava = [[0, config.obrazovka_vyska]]
     body_hlina = [[0, config.obrazovka_vyska]]
@@ -254,7 +254,7 @@ def vykresli_teren(screen, kamera_x, kamera_y, kaminky, barva_trava, barva_hlina
                 kaminky[kx] = segment_kaminky
 
         x += config.krok
-
+    
     if not(config.potato_pc):
         for klic in klice_na_smazani:
             if klic in kaminky:
@@ -265,6 +265,26 @@ def vykresli_teren(screen, kamera_x, kamera_y, kaminky, barva_trava, barva_hlina
 
     body_hlina.append([config.obrazovka_sirka, fyzika.generace_bod(kamera_x + config.obrazovka_sirka + config.krok) + vyska_travy - kamera_y])
     body_hlina.append([config.obrazovka_sirka, config.obrazovka_vyska])
+
+    x_obrazovka_rekord = rekord_x - kamera_x
+    rekord_y -= kamera_y
+    if -200 < x_obrazovka_rekord < config.obrazovka_sirka + 200:
+        cedule_sirka = 300
+        cedule_vyska = 80
+        cedule_rect = pygame.Rect(x_obrazovka_rekord - cedule_sirka//2, rekord_y - 300, cedule_sirka, cedule_vyska)
+        pygame.draw.rect(screen, (barva_hlina), cedule_rect, border_radius=12)
+        pygame.draw.rect(screen, (74, 74, 74), cedule_rect, 4, border_radius=12)
+        vykresli_text(
+            screen,
+            f"Personal best: {round(rekord_x/1000, 2)} km",
+            (0,0,0),
+            (cedule_rect.centerx, cedule_rect.centery),
+            zarovnat="center",
+            velikost=30
+        )
+
+        pygame.draw.rect(screen, (74, 74, 74), (x_obrazovka_rekord-8, rekord_y-220, 16, 250))
+
 
     pygame.gfxdraw.filled_polygon(screen, body_trava, barva_trava)
     pygame.gfxdraw.filled_polygon(screen, body_hlina, barva_hlina)
@@ -321,6 +341,11 @@ def pause_menu(screen, km_ujet):
     pokracovat_rect = pygame.Rect(config.obrazovka_sirka//2 - 200, 400, 400, 100)
     restart_rect = pygame.Rect(config.obrazovka_sirka//2 - 200, 550, 400, 100)
     menu_rect = pygame.Rect(config.obrazovka_sirka//2 - 200, 700, 400, 100)
+
+    km_ujet = round(km_ujet/1000, 2)
+    if km_ujet > config.rekordy[config.vybrana_mapa]:
+        config.rekordy[config.vybrana_mapa] = km_ujet
+
     while paused:
         screen.blit(posledni_snimek, (0, 0))
         pruhledna_cerna = pygame.Surface((config.obrazovka_sirka, config.obrazovka_vyska), pygame.SRCALPHA)
@@ -349,9 +374,6 @@ def pause_menu(screen, km_ujet):
                     zvuky["ui_click"].play()
                     return "restart"
                 elif menu_rect.collidepoint(event.pos):
-                    km_ujet = round(km_ujet/1000, 2)
-                    if km_ujet > config.rekordy[config.vybrana_mapa]:
-                        config.rekordy[config.vybrana_mapa] = km_ujet
                     zvuky["ui_click"].play()
                     return "menu"
 
@@ -581,6 +603,10 @@ def main():
     run_prachy = 0
 
     energie_predmety.add(EnergetickyPredmet(vzdalenost_predmetu, fyzika.generace_bod(vzdalenost_predmetu) - 150, jidlo_img, jidlo_energie))
+
+    rekord_x = config.rekordy[vybrana_mapa] * 1000
+    rekord_y = fyzika.generace_bod(rekord_x)
+
     while bezi:
         ted = pygame.time.get_ticks() / 1000.0
         snimky_cas = ted - posledni_cas
@@ -594,6 +620,9 @@ def main():
         pressed_keys = pygame.key.get_pressed()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                km_ujet = round(km_ujet/1000, 2)
+                if km_ujet > config.rekordy[config.vybrana_mapa]:
+                    config.rekordy[config.vybrana_mapa] = km_ujet
                 config.uloz_config()
                 pygame.quit()
                 quit()
@@ -789,8 +818,8 @@ def main():
         if not config.potato_pc:
             vykresli_mraky(screen, camera.x, camera.y, mraky, vybrana_mapa)
 
+        vykresli_teren(screen, camera.x, camera.y, kaminky, barva_trava, barva_hlina, barva_kamen, rekord_x, rekord_y)
         vykresli_kolo(kolo_interpolace, camera, rafek_img, ram_obrazky[int(kolo_interpolace.animace_index)])
-        vykresli_teren(screen, camera.x, camera.y, kaminky, barva_trava, barva_hlina, barva_kamen)
         
         rychlost = (abs(kolo.rear_wheel.get_speed().x / dt))/2000
 

@@ -69,7 +69,6 @@ margin_x = 50
 
 # TODO
 # tutorial - jen pri spusteni hry. vysvetlit rozbiti hlavy, smrt energie, controls
-# cedulky s rekordama
 # optimalizace?
 # procentualne na obrazovce vykreslovat?
 # easter eggy
