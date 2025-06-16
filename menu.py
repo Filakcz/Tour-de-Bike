@@ -77,6 +77,10 @@ margin_x = 50
 # tezsi zjistit kod?
 
 def menu():
+    if config.ukaz_tutorial:
+        ukaz_tutorial()
+        config.ukaz_tutorial = False
+        config.uloz_config()
     while True:
         screen.blit(main_menu_imgs[config.vybrane_kolo * 3 + config.vybrane_jidlo], (0,0))
 
@@ -114,6 +118,108 @@ def menu():
                     pygame.quit()
                     quit()
 
+def ukaz_tutorial():
+    tutorial_stranky = [
+        {
+            "obrazek": pygame.image.load("img/silnicka.png").convert_alpha(),
+            "text1": "Welcome to Tour de Bike!",
+            "text2": "Ride as far as you can. Collect coins and food. Upgrade your bike.",
+            "text3": "Use A and D for movement."
+        },
+        {
+            "obrazek": pygame.image.load("img/mapy/mesic.png").convert_alpha(),
+            "text1": "Avoid falling on your head!",
+            "text2": "Dont run out of energy.",
+            "text3": "Try to beat your personal best on each map."
+        },
+        {
+            "obrazek": pygame.image.load("img/zamek.png").convert_alpha(),
+            "obrazek2": pygame.image.load("img/kure.png").convert_alpha(),
+            "text1": "Upgrade your bike for more speed and endurance.",
+            "text2": "Unlock new bikes and foods for more fun!",
+            "text3": "To play click the button in top right corner.",
+        }
+    ]
+    strana = 0
+    pocet_stran = len(tutorial_stranky)
+    running = True
+    leva_sipka = pygame.Rect(80, 400, 120, 200)
+    prava_sipka = pygame.Rect(config.obrazovka_sirka - 200, 400, 120, 200)
+    x = config.obrazovka_sirka - 150
+    y = 50
+    delka = 50
+    sirka = 10
+
+
+    while running:
+        screen.blit(obloha_img, (0,0))
+        obrazek = tutorial_stranky[strana]["obrazek"]
+        obrazek2 = tutorial_stranky[strana].get("obrazek2", None)
+        if obrazek2:
+            obrazek2_sirka, obrazek2_vyska = obrazek2.get_size()
+            k = 500 / obrazek2_vyska
+            obrazek2 = pygame.transform.smoothscale(obrazek2, (k* obrazek2_sirka, k * obrazek2_vyska))
+            screen.blit(obrazek2, (config.obrazovka_sirka//2 - (obrazek2_sirka*k/2), 180))
+        obrazek_sirka, obrazek_vyska = obrazek.get_size()
+        k = 500 / obrazek_vyska
+        obrazek = pygame.transform.smoothscale(obrazek, (int(k * obrazek_sirka), int(k * obrazek_vyska)))
+        screen.blit(obrazek, (config.obrazovka_sirka//2-(obrazek_sirka*k/2), 180))
+
+        vykresli_text(screen, f"Tutorial ({strana+1}/{pocet_stran})", (0,0,0), (config.obrazovka_sirka//2, 80), "center", velikost=100, podrtzeny=True)
+        y0 = 750
+        for i in range(1, 5):
+            text = tutorial_stranky[strana].get(f"text{i}", "")
+            if text:
+                if text.startswith("Use ") or text.startswith("To play"):
+                    vykresli_text(screen, text, (255, 255, 74), (config.obrazovka_sirka//2, y0+50), velikost=90, zarovnat="center")
+                else:
+                    vykresli_text(screen, text, (0,0,0), (config.obrazovka_sirka//2, y0), velikost=48, zarovnat="center")
+                y0 += 60
+
+        if strana > 0:
+            body_leva = [
+                (leva_sipka.right, leva_sipka.top),
+                (leva_sipka.left, leva_sipka.centery),
+                (leva_sipka.right, leva_sipka.bottom)
+            ]
+            pygame.draw.polygon(screen, (100, 100, 100), body_leva)
+        if strana < pocet_stran-1:
+            body_prava = [
+                (prava_sipka.left, prava_sipka.top),
+                (prava_sipka.right, prava_sipka.centery),
+                (prava_sipka.left, prava_sipka.bottom)
+            ]
+            pygame.draw.polygon(screen, (100, 100, 100), body_prava)
+
+        krizek_rect = pygame.Rect(x-10, y-10, 2*delka +20, 2*delka +20)
+        pygame.draw.rect(screen, (186, 252, 192), krizek_rect, border_radius=12)
+        pygame.draw.rect(screen, (0, 0, 0), krizek_rect, 3, border_radius=12)
+        pygame.draw.line(screen, (0,0,0), (x, y), (x+ 2*delka, y+2*delka), sirka)
+        pygame.draw.line(screen, (0,0,0), (x, y+2*delka), (x+ 2*delka, y), sirka)
+
+        pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if krizek_rect.collidepoint(event.pos):
+                    hra.zvuky["ui_click"].play()
+                    return
+                if strana > 0 and leva_sipka.collidepoint(event.pos):
+                    hra.zvuky["ui_click"].play()
+                    strana -= 1
+                if strana < pocet_stran-1 and prava_sipka.collidepoint(event.pos):
+                    hra.zvuky["ui_click"].play()
+                    strana += 1
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_d and strana < pocet_stran-1:
+                    strana += 1
+                if event.key == pygame.K_a and strana > 0:
+                    strana -= 1
+                if event.key == pygame.K_ESCAPE:
+                    return
+                
 def menu_mapy():
     bezi = True
     while bezi:
@@ -489,6 +595,8 @@ def menu_nastaveni():
                     config.jidla_odemcena = [True, False, False]
                     config.kola_upgrady = [[0, 0], [0, 0], [0, 0]]
                     config.rekordy = [0,0,0,0]
+                    config.ukaz_tutorial = True
+                    config.vybrana_mapa = 0
                     zprava = "Stats reset successfully!"
                     zprava_cas = pygame.time.get_ticks() / 1000
 

@@ -49,6 +49,7 @@ obtiznost_mapy = 10000 # nizsi tezsi
 vybrana_mapa = 0
 
 rekordy = [0,0,0,0]
+ukaz_tutorial = True
 
 config_file = "config_save.json"
 
@@ -66,7 +67,8 @@ def uloz_config():
         "vybrane_kolo": vybrane_kolo,
         "vybrane_jidlo": vybrane_jidlo,
         "vybrana_mapa": vybrana_mapa,
-        "rekordy": rekordy
+        "rekordy": rekordy,
+        "ukaz_tutorial": ukaz_tutorial
     }
     with open(config_file, "w") as f:
         json.dump(data, f)
@@ -74,7 +76,7 @@ def uloz_config():
 def nacti_config():
     global volume_sound, volume_music, potato_pc, fps, fps_limit, fullscreen
     global vybrane_kolo, vybrane_jidlo, prachy, ztrata_energie, vybrana_mapa
-    global kola_odemcena, jidla_odemcena, kola_upgrady, rekordy
+    global kola_odemcena, jidla_odemcena, kola_upgrady, rekordy, ukaz_tutorial
 
     if os.path.exists(config_file):
         with open(config_file, "r") as f:
@@ -92,6 +94,7 @@ def nacti_config():
             vybrane_jidlo = data.get("vybrane_jidlo", vybrane_jidlo)
             vybrana_mapa = data.get("vybrana_mapa", vybrana_mapa)
             rekordy = data.get("rekordy", rekordy)
+            ukaz_tutorial = data.get("ukaz_tutorial", ukaz_tutorial)
     
     if not kola_odemcena[vybrane_kolo]:
         vybrane_kolo = 0
