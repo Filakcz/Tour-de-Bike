@@ -622,7 +622,7 @@ def menu_nastaveni():
             elif event.type == pygame.KEYDOWN:
                 if zadavani_kodu:
                     if event.key == pygame.K_RETURN:
-                        if secret_code == "martinkodjechaos":
+                        if secret_code == "zdarmaprachy":
                             config.prachy += 1000000
                             zprava = "+ 1 milion"
                         else:
