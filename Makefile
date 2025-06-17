@@ -1,2 +1,2 @@
 default:
-	python menu.py
+	python main.py

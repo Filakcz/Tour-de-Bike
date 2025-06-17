@@ -7,8 +7,6 @@ from hra import get_font
 from fyzika import nastav_kolo
 import hra
 
-pygame.init()
-
 
 screen = pygame.display.set_mode((config.obrazovka_sirka, config.obrazovka_vyska))
 pygame.display.set_caption("Tour de Bike - Menu")
@@ -70,7 +68,7 @@ margin_x = 50
 # TODO
 # procentualne na obrazovce vykreslovat?
 # easter eggy
-# zlepsit readme a trailer?
+
 
 
 def menu():

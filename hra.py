@@ -3,10 +3,7 @@ import pygame.gfxdraw
 import math
 import random
 import config
-from fyzika import Vector, Bike
-
-pygame.init()
-
+from fyzika import Vector
 import fyzika
 
 screen = pygame.display.set_mode((config.obrazovka_sirka, config.obrazovka_vyska))
@@ -554,8 +551,8 @@ def main():
     t = 0.0
     posledni_cas = pygame.time.get_ticks() / 1000.0
     
-    kolo = Bike(Vector(0, fyzika.generace_bod(0)-200))
-    kolo_predchozi = Bike(Vector(0, fyzika.generace_bod(0)-200))
+    kolo = fyzika.Bike(Vector(0, fyzika.generace_bod(0)-200))
+    kolo_predchozi = fyzika.Bike(Vector(0, fyzika.generace_bod(0)-200))
     kolo_predchozi.copy_state_from(kolo)
 
     km_ujet = 0
