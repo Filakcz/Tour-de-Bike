@@ -514,12 +514,13 @@ def main():
                     })
 
 
-        kaminky = {}
+
         
         particly = []
         na_zemi_predni = False
         na_zemi_zadni = False
 
+    kaminky = {}
 
     if vybrana_mapa == 1:  # mesic
         config.GRAVITY = (0, 0.1)

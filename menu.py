@@ -68,13 +68,10 @@ pygame.mixer.music.play(-1)
 margin_x = 50
 
 # TODO
-# tutorial - jen pri spusteni hry. vysvetlit rozbiti hlavy, smrt energie, controls
-# optimalizace?
 # procentualne na obrazovce vykreslovat?
 # easter eggy
-# fonty
 # zlepsit readme a trailer?
-# tezsi zjistit kod?
+
 
 def menu():
     if config.ukaz_tutorial:
@@ -530,6 +527,9 @@ def menu_nastaveni():
             if (pygame.time.get_ticks() / 1000) - zprava_cas > 3:
                 zprava = ""
 
+        tlacitko_tutorial = pygame.Rect(3 * margin_x + 600, 630, 300, 80)
+        vykresli_tlacitko(screen, "Show tutorial", tlacitko_tutorial, barva_pozadi=(255, 200, 100), barva_textu=(0,0,0))
+
         tlacitko_reset = pygame.Rect(2 * margin_x + 300, 630, 300, 80)
         vykresli_tlacitko(screen, "Reset settings", tlacitko_reset, barva_pozadi=(255, 200, 100), barva_textu=(0,0,0))
 
@@ -537,7 +537,7 @@ def menu_nastaveni():
         vykresli_tlacitko(screen, "Back", tlacitko_zpet, barva_pozadi=(255, 100, 100), barva_textu=(0,0,0))
 
         vykresli_text(screen, "Credits:", (0, 0, 0), (margin_x, 825))
-        vykresli_text(screen, "Ondra - physics, antialiasing, playtester; Rosta - bugfix stones, playtester; Martin - playtester, background music", (0, 0, 0), (margin_x, 900), velikost=30)
+        vykresli_text(screen, "Dremer3135 - physics, antialiasing, playtesting; anteat3r - bugfix stones, playtesting; Paidarovecc - background music, playtesting", (0, 0, 0), (margin_x, 900), velikost=30)
         vykresli_text(screen, "", (0, 0, 0), (margin_x, 900))
 
         pygame.display.flip()
@@ -595,10 +595,13 @@ def menu_nastaveni():
                     config.jidla_odemcena = [True, False, False]
                     config.kola_upgrady = [[0, 0], [0, 0], [0, 0]]
                     config.rekordy = [0,0,0,0]
-                    config.ukaz_tutorial = True
                     config.vybrana_mapa = 0
                     zprava = "Stats reset successfully!"
                     zprava_cas = pygame.time.get_ticks() / 1000
+                
+                elif tlacitko_tutorial.collidepoint(event.pos):
+                    hra.zvuky["ui_click"].play()
+                    ukaz_tutorial()
 
                 elif kod_rect.collidepoint(event.pos):
                     hra.zvuky["ui_click"].play()
