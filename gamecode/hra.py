@@ -500,7 +500,7 @@ def rotace_bodu(bod, pivot, uhel_stupne):
 
     return (x_rot + piv_x, y_rot + piv_y)
 
-def main():
+def spust_hru():
     ram_obrazky = nahrat_obrazky(config.vybrane_kolo)
 
     vybrana_mapa = config.vybrana_mapa
@@ -521,9 +521,6 @@ def main():
                         "velikost": velikost,
                         "vrstva": vrstva
                     })
-
-
-
         
         particly = []
         na_zemi_predni = False
@@ -765,7 +762,7 @@ def main():
                 while True:
                     akce = konec_menu(screen, km_ujet, run_prachy, "Out of energy!")
                     if akce == "restart":
-                        main()
+                        spust_hru()
                         return
                     elif akce == "menu":
                         return
@@ -798,7 +795,7 @@ def main():
                 while True:
                     akce = konec_menu(screen, km_ujet, run_prachy, "Skull cracked!")
                     if akce == "restart":
-                        main()
+                        spust_hru()
                         return
                     elif akce == "menu":
                         return
@@ -877,7 +874,7 @@ def main():
                 pauza = False
                 posledni_cas = pygame.time.get_ticks() / 1000.0
             elif akce == "restart":
-                main()
+                spust_hru()
                 return
             elif akce == "menu":
                 bezi = False

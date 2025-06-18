@@ -1,9 +1,6 @@
 import pygame
 from . import config
-from .hra import main as spust_hru
-from .hra import vykresli_text
-from .hra import vykresli_tlacitko
-from .hra import get_font
+from .hra import vykresli_text, vykresli_tlacitko, get_font
 from .fyzika import nastav_kolo
 from . import hra
 
@@ -99,7 +96,7 @@ def menu():
                         nastav_kolo(config.vybrane_kolo)
                         config.nastav_upgrady()
                         config.uloz_config()
-                        spust_hru()
+                        hra.spust_hru()
                 elif tlacitko_vylepseni.collidepoint(event.pos):
                     hra.zvuky["ui_click"].play()
                     menu_vylepseni()
