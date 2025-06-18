@@ -1,6 +1,6 @@
 import math
 import pygame
-import config
+from . import config
 
 
 def nastav_kolo(typ):

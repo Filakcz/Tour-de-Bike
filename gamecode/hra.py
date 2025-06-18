@@ -2,9 +2,9 @@ import pygame
 import pygame.gfxdraw
 import math
 import random
-import config
-from fyzika import Vector
-import fyzika
+from . import config
+from .fyzika import Vector
+from . import fyzika
 
 screen = pygame.display.set_mode((config.obrazovka_sirka, config.obrazovka_vyska))
 pygame.display.set_caption("Tour de Bike")

@@ -1,11 +1,11 @@
 import pygame
-import config
-from hra import main as spust_hru
-from hra import vykresli_text
-from hra import vykresli_tlacitko
-from hra import get_font
-from fyzika import nastav_kolo
-import hra
+from . import config
+from .hra import main as spust_hru
+from .hra import vykresli_text
+from .hra import vykresli_tlacitko
+from .hra import get_font
+from .fyzika import nastav_kolo
+from . import hra
 
 
 screen = pygame.display.set_mode((config.obrazovka_sirka, config.obrazovka_vyska))
@@ -67,7 +67,6 @@ margin_x = 50
 
 # TODO
 # procentualne na obrazovce vykreslovat?
-# tutorial obrazek github ovladani
 # easter eggy
 
 

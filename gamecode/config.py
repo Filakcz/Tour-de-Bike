@@ -51,7 +51,8 @@ vybrana_mapa = 0
 rekordy = [0,0,0,0]
 ukaz_tutorial = True
 
-config_file = "config_save.json"
+config_file = os.path.join(os.path.dirname(__file__), "config_save.json")
+
 
 def uloz_config():
     data = {

@@ -2,6 +2,6 @@ import pygame
 
 pygame.init()
 
-import menu
+import gamecode.menu as menu
 
 menu.menu()
