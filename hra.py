@@ -77,9 +77,18 @@ def vykresli_text(surf, text, barva, pozice, zarovnat="left", velikost=50, font=
 
     surf.blit(text_surface, text_rect)
 
-def vykresli_tlacitko(surface, text, rect, barva_textu=(255,255,255), barva_pozadi=(0, 70, 140), barva_okraje=(0,0,0), tloustka_okraje=2, velikost_pisma=50, font="Arial", shadow=False):
+def vykresli_tlacitko(surface, text, rect, barva_textu=(255,255,255), barva_pozadi=(0, 70, 140), barva_okraje=(0,0,0), tloustka_okraje=2, velikost_pisma=50, font="Arial", shadow=False, hovered=False):
+    if hovered:
+        nova_barva = []
+        for colr in barva_pozadi:
+            single_barva = int(colr * 1.2)
+            if single_barva > 255:
+                single_barva = 255
+            nova_barva.append(single_barva)
+        barva_pozadi = (nova_barva[0], nova_barva[1], nova_barva[2])
+        
     pygame.draw.rect(surface, barva_pozadi, rect)
-
+    
     if tloustka_okraje > 0:
         pygame.draw.rect(surface, barva_okraje, rect, tloustka_okraje)
 
@@ -350,9 +359,11 @@ def pause_menu(screen, km_ujet):
         screen.blit(pruhledna_cerna, (0, 0))
         vykresli_text(screen, "Paused", (255, 255, 255), (config.obrazovka_sirka//2, 250), "center", 200, shadow=True)
 
-        vykresli_tlacitko(screen, "Continue", pokracovat_rect, shadow=True)
-        vykresli_tlacitko(screen, "Restart", restart_rect, shadow=True)
-        vykresli_tlacitko(screen, "Back to menu", menu_rect, shadow=True)
+        mouse_pos = pygame.mouse.get_pos()
+
+        vykresli_tlacitko(screen, "Continue", pokracovat_rect, shadow=True, hovered=pokracovat_rect.collidepoint(mouse_pos))
+        vykresli_tlacitko(screen, "Restart", restart_rect, shadow=True, hovered=restart_rect.collidepoint(mouse_pos))
+        vykresli_tlacitko(screen, "Back to menu", menu_rect, shadow=True, hovered=menu_rect.collidepoint(mouse_pos))
 
         pygame.display.flip()
         for event in pygame.event.get():
@@ -401,8 +412,10 @@ def konec_menu(screen, km_ujet, run_prachy, proc):
         vykresli_text(screen, f"Distance: {km_ujet} km", (255, 255, 255), (config.obrazovka_sirka//4, 610), "center", 70, shadow=True)
 
 
-        vykresli_tlacitko(screen, "Restart", restart_rect, shadow=True)
-        vykresli_tlacitko(screen, "Back to menu", menu_rect, shadow=True)
+        mouse_pos = pygame.mouse.get_pos()
+
+        vykresli_tlacitko(screen, "Restart", restart_rect, shadow=True, hovered=restart_rect.collidepoint(mouse_pos))
+        vykresli_tlacitko(screen, "Back to menu", menu_rect, shadow=True, hovered=menu_rect.collidepoint(mouse_pos))
 
         pygame.display.flip()
         for event in pygame.event.get():

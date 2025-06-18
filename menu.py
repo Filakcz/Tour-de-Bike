@@ -67,6 +67,7 @@ margin_x = 50
 
 # TODO
 # procentualne na obrazovce vykreslovat?
+# tutorial obrazek github ovladani
 # easter eggy
 
 
@@ -116,13 +117,13 @@ def menu():
 def ukaz_tutorial():
     tutorial_stranky = [
         {
-            "obrazek": pygame.image.load("img/silnicka.png").convert_alpha(),
+            "obrazek": pygame.image.load("img/tabulka.png").convert_alpha(),
             "text1": "Welcome to Tour de Bike!",
             "text2": "Ride as far as you can. Collect coins and food. Upgrade your bike.",
             "text3": "Use A and D for movement."
         },
         {
-            "obrazek": pygame.image.load("img/mapy/mesic.png").convert_alpha(),
+            "obrazek": pygame.image.load("img/smrt.png").convert_alpha(),
             "text1": "Avoid falling on your head!",
             "text2": "Dont run out of energy.",
             "text3": "Try to beat your personal best on each map."
@@ -148,6 +149,8 @@ def ukaz_tutorial():
 
     while running:
         screen.blit(obloha_img, (0,0))
+        mouse_pos = pygame.mouse.get_pos()
+
         obrazek = tutorial_stranky[strana]["obrazek"]
         obrazek2 = tutorial_stranky[strana].get("obrazek2", None)
         if obrazek2:
@@ -171,24 +174,33 @@ def ukaz_tutorial():
                     vykresli_text(screen, text, (0,0,0), (config.obrazovka_sirka//2, y0), velikost=48, zarovnat="center")
                 y0 += 60
 
+        if leva_sipka.collidepoint(mouse_pos):
+            barva_leva = (160, 160, 160)
+        else:
+            barva_leva = (100, 100, 100)
+        if prava_sipka.collidepoint(mouse_pos):
+            barva_prava = (160, 160, 160)
+        else:
+            barva_prava = (100, 100, 100)
+
         if strana > 0:
             body_leva = [
                 (leva_sipka.right, leva_sipka.top),
                 (leva_sipka.left, leva_sipka.centery),
                 (leva_sipka.right, leva_sipka.bottom)
             ]
-            pygame.draw.polygon(screen, (100, 100, 100), body_leva)
+
+            pygame.draw.polygon(screen, (barva_leva), body_leva)
         if strana < pocet_stran-1:
             body_prava = [
                 (prava_sipka.left, prava_sipka.top),
                 (prava_sipka.right, prava_sipka.centery),
                 (prava_sipka.left, prava_sipka.bottom)
             ]
-            pygame.draw.polygon(screen, (100, 100, 100), body_prava)
+            pygame.draw.polygon(screen, (barva_prava), body_prava)
 
         krizek_rect = pygame.Rect(x-10, y-10, 2*delka +20, 2*delka +20)
-        pygame.draw.rect(screen, (186, 252, 192), krizek_rect, border_radius=12)
-        pygame.draw.rect(screen, (0, 0, 0), krizek_rect, 3, border_radius=12)
+        vykresli_tlacitko(screen, "", krizek_rect, barva_pozadi=(255, 100, 100), barva_textu=(0,0,0), hovered=krizek_rect.collidepoint(mouse_pos))
         pygame.draw.line(screen, (0,0,0), (x, y), (x+ 2*delka, y+2*delka), sirka)
         pygame.draw.line(screen, (0,0,0), (x, y+2*delka), (x+ 2*delka, y), sirka)
 
@@ -223,8 +235,17 @@ def menu_mapy():
 
         leva_sipka = pygame.Rect(400, 400, 120, 150)
         prava_sipka = pygame.Rect(1400, 400, 120, 150)
-        pygame.draw.polygon(screen, (100, 100, 100), [(leva_sipka.right, leva_sipka.top), (leva_sipka.left, leva_sipka.centery), (leva_sipka.right, leva_sipka.bottom)])
-        pygame.draw.polygon(screen, (100, 100, 100), [(prava_sipka.left, prava_sipka.top), (prava_sipka.right, prava_sipka.centery), (prava_sipka.left, prava_sipka.bottom)])
+        mouse_pos = pygame.mouse.get_pos()
+        if leva_sipka.collidepoint(mouse_pos):
+            barva_leva = (160, 160, 160)
+        else:
+            barva_leva = (100, 100, 100)
+        if prava_sipka.collidepoint(mouse_pos):
+            barva_prava = (160, 160, 160)
+        else:
+            barva_prava = (100, 100, 100)
+        pygame.draw.polygon(screen, barva_leva, [(leva_sipka.right, leva_sipka.top), (leva_sipka.left, leva_sipka.centery), (leva_sipka.right, leva_sipka.bottom)])
+        pygame.draw.polygon(screen, barva_prava, [(prava_sipka.left, prava_sipka.top), (prava_sipka.right, prava_sipka.centery), (prava_sipka.left, prava_sipka.bottom)])
 
         nazev, img = mapy[config.vybrana_mapa]
         img = pygame.transform.smoothscale(img, (608, 342))
@@ -241,10 +262,10 @@ def menu_mapy():
         vykresli_text(screen, f"Personal best: {config.rekordy[config.vybrana_mapa]} km", (255, 200, 0),(config.obrazovka_sirka//2, 750), "center", 80, shadow=True)
 
         tlacitko_start = pygame.Rect(config.obrazovka_sirka//2 - 200, 850, 400, 100)
-        vykresli_tlacitko(screen, "Start", tlacitko_start, barva_pozadi=(180,255,180), barva_textu=(0,0,0))
+        vykresli_tlacitko(screen, "Start", tlacitko_start, barva_pozadi=(180,255,180), barva_textu=(0,0,0), hovered= tlacitko_start.collidepoint(mouse_pos))
 
         tlacitko_zpet = pygame.Rect(50, 900, 250, 80)
-        vykresli_tlacitko(screen, "Back", tlacitko_zpet, barva_pozadi=(255, 100, 100), barva_textu=(0,0,0))
+        vykresli_tlacitko(screen, "Back", tlacitko_zpet, barva_pozadi=(255, 100, 100), barva_textu=(0,0,0), hovered= tlacitko_zpet.collidepoint(mouse_pos))
 
         pygame.display.flip()
         for event in pygame.event.get():
@@ -274,12 +295,23 @@ def menu_vylepseni():
     bezi = True
     while bezi:
         screen.blit(obloha_img, (0, 0))
+
+        mouse_pos = pygame.mouse.get_pos()
+
         vykresli_text(screen, "Upgrades", (0, 0, 0), (300, 100), "center", velikost=125, podrtzeny=True)
 
         leva_sipka = pygame.Rect(200, 400, 120, 150)
         prava_sipka = pygame.Rect(320 + 2 * margin_x + kolo_delka, 400, 120, 150)
-        pygame.draw.polygon(screen, (100, 100, 100), [(leva_sipka.right, leva_sipka.top), (leva_sipka.left, leva_sipka.centery), (leva_sipka.right, leva_sipka.bottom)])
-        pygame.draw.polygon(screen, (100, 100, 100), [(prava_sipka.left, prava_sipka.top), (prava_sipka.right, prava_sipka.centery), (prava_sipka.left, prava_sipka.bottom)])
+        if leva_sipka.collidepoint(mouse_pos):
+            barva_leva = (160, 160, 160)
+        else:
+            barva_leva = (100, 100, 100)
+        if prava_sipka.collidepoint(mouse_pos):
+            barva_prava = (160, 160, 160)
+        else:
+            barva_prava = (100, 100, 100)
+        pygame.draw.polygon(screen, barva_leva, [(leva_sipka.right, leva_sipka.top), (leva_sipka.left, leva_sipka.centery), (leva_sipka.right, leva_sipka.bottom)])
+        pygame.draw.polygon(screen, barva_prava, [(prava_sipka.left, prava_sipka.top), (prava_sipka.right, prava_sipka.centery), (prava_sipka.left, prava_sipka.bottom)])
 
         id_kola = config.vybrane_kolo
         kolo_nazev, kolo_img = bike_imgs[id_kola]
@@ -297,7 +329,7 @@ def menu_vylepseni():
             vykresli_tlacitko(screen, "Selected", tlacitko_kolo, barva_pozadi=barva, barva_textu=(0,0,0))
         else:
             barva = (255,220,220)
-            vykresli_tlacitko(screen, f"{config.ceny_kol[id_kola]} $", tlacitko_kolo, barva_pozadi=barva, barva_textu=(0,0,0))
+            vykresli_tlacitko(screen, f"{config.ceny_kol[id_kola]} $", tlacitko_kolo, barva_pozadi=barva, barva_textu=(0,0,0), hovered=tlacitko_kolo.collidepoint(mouse_pos))
 
         vykresli_text(screen, "Upgrades are separate for each bike", (0,0,0), (600,970))
 
@@ -331,7 +363,8 @@ def menu_vylepseni():
                 f"{upgrade_jmeno}: {upgrade_level}/{config.max_upgrade} {config.cena_upgrade[upgrade_idx]}$",
                 upgrade_rect,
                 barva_pozadi=barva,
-                barva_textu=(0,0,0)
+                barva_textu=(0,0,0),
+                hovered=upgrade_rect.collidepoint(mouse_pos)
                 )
 
         jidlo_rects = []
@@ -363,9 +396,9 @@ def menu_vylepseni():
                 if config.vybrane_jidlo == i:
                     vykresli_tlacitko(screen, "Selected", tlacitko, barva_pozadi=barva_pozadi, barva_textu=(0,0,0))
                 else:
-                    vykresli_tlacitko(screen, "Select", tlacitko, barva_pozadi=barva_pozadi, barva_textu=(0,0,0))
+                    vykresli_tlacitko(screen, "Select", tlacitko, barva_pozadi=barva_pozadi, barva_textu=(0,0,0), hovered=tlacitko.collidepoint(mouse_pos))
             else:
-                vykresli_tlacitko(screen, f"{config.ceny_jidel[i]} $", tlacitko, barva_pozadi=(255, 133, 113), barva_textu=(0,0,0))
+                vykresli_tlacitko(screen, f"{config.ceny_jidel[i]} $", tlacitko, barva_pozadi=(255, 133, 113), barva_textu=(0,0,0), hovered=tlacitko.collidepoint(mouse_pos))
                 scale = (jidlo_delka - 20) / zamek_sirka
                 zamek_small = pygame.transform.smoothscale(zamek, (zamek_sirka * scale, zamek_vyska * scale))
                 zamek_x = img_x + ((img_rect.width - zamek_sirka * scale)/2)
@@ -378,7 +411,7 @@ def menu_vylepseni():
             vykresli_tlacitko(screen, "Select unlocked bike", tlacitko_zpet, barva_pozadi=(180, 180, 180), barva_textu=(120,120,120))
             zpet_povoleno = False
         else:
-            vykresli_tlacitko(screen, "Back", tlacitko_zpet, barva_pozadi=(255, 100, 100), barva_textu=(0,0,0))
+            vykresli_tlacitko(screen, "Back", tlacitko_zpet, barva_pozadi=(255, 100, 100), barva_textu=(0,0,0), hovered=tlacitko_zpet.collidepoint(mouse_pos))
             zpet_povoleno = True
 
 
@@ -505,8 +538,9 @@ def menu_nastaveni():
         slider_rect_fps_limit = vykresli_slider(screen, 470, 300, config.fps_limit, "FPS limit", 300, "FPS:")
         checkbox_rect_fullscreen = vykresli_zakliknuti(screen, 545, "Fullscreen:", config.fullscreen)
 
+        mouse_pos = pygame.mouse.get_pos()
         tlacitko_reset_staty = pygame.Rect(margin_x, 630,300,80)
-        vykresli_tlacitko(screen, "Reset stats", tlacitko_reset_staty, barva_pozadi=(255, 200, 100), barva_textu=(0,0,0))
+        vykresli_tlacitko(screen, "Reset stats", tlacitko_reset_staty, barva_pozadi=(255, 200, 100), barva_textu=(0,0,0), hovered=tlacitko_reset_staty.collidepoint(mouse_pos))
         
         vykresli_text(screen, "Secret code:", (0, 0, 0), (margin_x, 750))
         code_sirka, code_vyska = get_font(50, "Arial").size("Secret code:")
@@ -526,13 +560,13 @@ def menu_nastaveni():
                 zprava = ""
 
         tlacitko_tutorial = pygame.Rect(3 * margin_x + 600, 630, 300, 80)
-        vykresli_tlacitko(screen, "Show tutorial", tlacitko_tutorial, barva_pozadi=(255, 200, 100), barva_textu=(0,0,0))
+        vykresli_tlacitko(screen, "Show tutorial", tlacitko_tutorial, barva_pozadi=(255, 200, 100), barva_textu=(0,0,0), hovered=tlacitko_tutorial.collidepoint(mouse_pos))
 
         tlacitko_reset = pygame.Rect(2 * margin_x + 300, 630, 300, 80)
-        vykresli_tlacitko(screen, "Reset settings", tlacitko_reset, barva_pozadi=(255, 200, 100), barva_textu=(0,0,0))
+        vykresli_tlacitko(screen, "Reset settings", tlacitko_reset, barva_pozadi=(255, 200, 100), barva_textu=(0,0,0), hovered=tlacitko_reset.collidepoint(mouse_pos))
 
         tlacitko_zpet = pygame.Rect(margin_x, config.obrazovka_vyska - 120, 200, 80)
-        vykresli_tlacitko(screen, "Back", tlacitko_zpet, barva_pozadi=(255, 100, 100), barva_textu=(0,0,0))
+        vykresli_tlacitko(screen, "Back", tlacitko_zpet, barva_pozadi=(255, 100, 100), barva_textu=(0,0,0), hovered=tlacitko_zpet.collidepoint(mouse_pos))
 
         vykresli_text(screen, "Credits:", (0, 0, 0), (margin_x, 825))
         vykresli_text(screen, "Dremer3135 - physics, antialiasing, playtesting; anteat3r - bugfix stones, playtesting; Paidarovecc - background music, playtesting", (0, 0, 0), (margin_x, 900), velikost=30)

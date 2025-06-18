@@ -29,6 +29,8 @@ python main.py
 | D | Move right / rotate anticlockwise in air |
 | ESC | Open pause menu / go to main menu |
 
+![Gameplay](img/smrt.png)
+
 ## Authors
 - [Filakcz](https://github.com/Filakcz) - almost everything
 - [Dremer3135](https://github.com/Dremer3135) - physics, antialiasing, playtesting
