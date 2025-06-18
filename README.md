@@ -29,7 +29,7 @@ python main.py
 | D | Move right / rotate anticlockwise in air |
 | ESC | Open pause menu / go to main menu |
 
-![Gameplay](img/smrt.png)
+![Gameplay](img/tutorial.png)
 
 ## Authors
 - [Filakcz](https://github.com/Filakcz) - almost everything

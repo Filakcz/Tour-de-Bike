@@ -123,7 +123,7 @@ def ukaz_tutorial():
             "text3": "Use A and D for movement."
         },
         {
-            "obrazek": pygame.image.load("img/smrt.png").convert_alpha(),
+            "obrazek": pygame.image.load("img/tutorial.png").convert_alpha(),
             "text1": "Avoid falling on your head!",
             "text2": "Dont run out of energy.",
             "text3": "Try to beat your personal best on each map."
@@ -199,10 +199,11 @@ def ukaz_tutorial():
             ]
             pygame.draw.polygon(screen, (barva_prava), body_prava)
 
-        krizek_rect = pygame.Rect(x-10, y-10, 2*delka +20, 2*delka +20)
-        vykresli_tlacitko(screen, "", krizek_rect, barva_pozadi=(255, 100, 100), barva_textu=(0,0,0), hovered=krizek_rect.collidepoint(mouse_pos))
-        pygame.draw.line(screen, (0,0,0), (x, y), (x+ 2*delka, y+2*delka), sirka)
-        pygame.draw.line(screen, (0,0,0), (x, y+2*delka), (x+ 2*delka, y), sirka)
+        if strana == pocet_stran-1:
+            krizek_rect = pygame.Rect(x-10, y-10, 2*delka +20, 2*delka +20)
+            vykresli_tlacitko(screen, "", krizek_rect, barva_pozadi=(255, 100, 100), barva_textu=(0,0,0), hovered=krizek_rect.collidepoint(mouse_pos))
+            pygame.draw.line(screen, (0,0,0), (x, y), (x+ 2*delka, y+2*delka), sirka)
+            pygame.draw.line(screen, (0,0,0), (x, y+2*delka), (x+ 2*delka, y), sirka)
 
         pygame.display.flip()
         for event in pygame.event.get():
@@ -210,9 +211,10 @@ def ukaz_tutorial():
                 pygame.quit()
                 quit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                if krizek_rect.collidepoint(event.pos):
-                    hra.zvuky["ui_click"].play()
-                    return
+                if strana == pocet_stran-1:
+                    if krizek_rect.collidepoint(event.pos):
+                        hra.zvuky["ui_click"].play()
+                        return
                 if strana > 0 and leva_sipka.collidepoint(event.pos):
                     hra.zvuky["ui_click"].play()
                     strana -= 1
@@ -224,8 +226,9 @@ def ukaz_tutorial():
                     strana += 1
                 if event.key == pygame.K_a and strana > 0:
                     strana -= 1
-                if event.key == pygame.K_ESCAPE:
-                    return
+                if strana == pocet_stran-1:
+                    if event.key == pygame.K_ESCAPE:
+                        return
                 
 def menu_mapy():
     bezi = True
