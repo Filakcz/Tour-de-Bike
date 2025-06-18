@@ -7,7 +7,6 @@ from .fyzika import Vector
 from . import fyzika
 
 screen = pygame.display.set_mode((config.obrazovka_sirka, config.obrazovka_vyska))
-pygame.display.set_caption("Tour de Bike")
 
 vyska_travy = 50
 
@@ -618,6 +617,8 @@ def main():
     rekord_x = config.rekordy[vybrana_mapa] * 1000
     rekord_y = fyzika.generace_bod(rekord_x)
 
+    pauza = False
+
     while bezi:
         ted = pygame.time.get_ticks() / 1000.0
         snimky_cas = ted - posledni_cas
@@ -639,25 +640,12 @@ def main():
                 quit()
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    akce = pause_menu(screen, km_ujet)
-                    if akce == "pokracovat":
-                        continue
-                    elif akce == "restart":
-                        main()
-                        return
-                    elif akce == "menu":
-                        bezi = False
+                    pauza = True
+
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if pause_tlacitko_rect.collidepoint(event.pos):
                     zvuky["ui_click"].play()
-                    akce = pause_menu(screen, km_ujet)
-                    if akce == "pokracovat":
-                        continue
-                    elif akce == "restart":
-                        main()
-                        return
-                    elif akce == "menu":
-                        bezi = False
+                    pauza = True
 
         # FYZYKA
         while accumulator >= dt:
@@ -882,6 +870,18 @@ def main():
         pygame.draw.rect(screen, cara_barva, (x2, y, cara_sirka, cara_vyska), border_radius=6)
 
         camera = fyzika.lerp(camera, kolo_interpolace.rear_axel.position - Vector(-config.BIKE_LENGTH / 2 + config.obrazovka_sirka/2, config.obrazovka_vyska/1.6), 0.1)
+
+        if pauza:
+            akce = pause_menu(screen, km_ujet)
+            if akce == "pokracovat":
+                pauza = False
+                posledni_cas = pygame.time.get_ticks() / 1000.0
+            elif akce == "restart":
+                main()
+                return
+            elif akce == "menu":
+                bezi = False
+
         clock.tick(int(30 + config.fps_limit * 240))
         pygame.display.flip()
         

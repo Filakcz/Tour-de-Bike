@@ -9,7 +9,7 @@ from . import hra
 
 
 screen = pygame.display.set_mode((config.obrazovka_sirka, config.obrazovka_vyska))
-pygame.display.set_caption("Tour de Bike - Menu")
+pygame.display.set_caption("Tour de Bike")
 
 main_menu_imgs = []
 for i in range(3):
