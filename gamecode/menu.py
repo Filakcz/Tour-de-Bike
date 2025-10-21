@@ -5,7 +5,7 @@ from .fyzika import nastav_kolo
 from . import hra
 
 
-screen = pygame.display.set_mode((config.obrazovka_sirka, config.obrazovka_vyska))
+screen = pygame.display.set_mode((config.obrazovka_sirka, config.obrazovka_vyska), pygame.RESIZABLE)
 pygame.display.set_caption("Tour de Bike")
 
 main_menu_imgs = []
